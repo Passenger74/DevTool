@@ -1,29 +1,36 @@
 import { useApp } from '../store';
+import { useAuth } from '../auth';
 import { ViewMode } from '../types';
 import {
   LayoutDashboard,
   List,
   Columns,
   Calendar,
-  Plus,
+  Users,
+  LayoutGrid,
+  Settings,
   X,
   ChevronDown,
   Zap,
+  LogOut,
 } from 'lucide-react';
 
-const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+const navItems: { id: ViewMode; label: string; icon: React.ReactNode; section?: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, section: 'Principal' },
   { id: 'list', label: 'Lista', icon: <List size={20} /> },
-  { id: 'board', label: 'Tablero', icon: <Columns size={20} /> },
+  { id: 'board', label: 'Tablero Kanban', icon: <Columns size={20} /> },
   { id: 'calendar', label: 'Calendario', icon: <Calendar size={20} /> },
+  { id: 'teams', label: 'Equipos', icon: <Users size={20} />, section: 'Gestión' },
+  { id: 'boards', label: 'Tableros', icon: <LayoutGrid size={20} /> },
+  { id: 'settings', label: 'Configuración', icon: <Settings size={20} /> },
 ];
 
 export default function Sidebar() {
-  const { spaces, currentView, setCurrentView, selectedSpace, setSelectedSpace, sidebarOpen, setSidebarOpen } = useApp();
+  const { currentView, setCurrentView, sidebarOpen, setSidebarOpen } = useApp();
+  const { user, logout } = useAuth();
 
   return (
     <>
-      {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-40 lg:hidden"
@@ -56,12 +63,13 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4">
+          {/* Principal */}
           <div className="mb-6">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
-              Vistas
+              Principal
             </p>
             <ul className="space-y-1">
-              {navItems.map(item => (
+              {navItems.filter(i => !i.section || i.section === 'Principal').map(item => (
                 <li key={item.id}>
                   <button
                     onClick={() => {
@@ -82,35 +90,27 @@ export default function Sidebar() {
             </ul>
           </div>
 
-          {/* Spaces */}
+          {/* Gestión */}
           <div>
-            <div className="flex items-center justify-between px-3 mb-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Espacios
-              </p>
-              <button className="p-1 rounded hover:bg-gray-100">
-                <Plus size={14} className="text-gray-400" />
-              </button>
-            </div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
+              Gestión
+            </p>
             <ul className="space-y-1">
-              {spaces.map(space => (
-                <li key={space.id}>
+              {navItems.filter(i => i.section === 'Gestión' || i.id === 'settings').map(item => (
+                <li key={item.id}>
                   <button
                     onClick={() => {
-                      setSelectedSpace(selectedSpace === space.id ? null : space.id);
+                      setCurrentView(item.id);
                       setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      selectedSpace === space.id
+                      currentView === item.id
                         ? 'bg-orange-50 text-orange-700 border border-orange-200'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <span className="text-lg">{space.icon}</span>
-                    <span className="flex-1 text-left">{space.name}</span>
-                    <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                      {space.taskCount}
-                    </span>
+                    {item.icon}
+                    {item.label}
                   </button>
                 </li>
               ))}
@@ -120,15 +120,21 @@ export default function Sidebar() {
 
         {/* User section */}
         <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer group">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-orange-400 flex items-center justify-center text-white font-bold text-sm">
-              JP
+              {user?.avatar || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">Juan Pérez</p>
-              <p className="text-xs text-gray-400 truncate">Admin</p>
+              <p className="text-sm font-medium text-gray-800 truncate">{user?.name || 'Usuario'}</p>
+              <p className="text-xs text-gray-400 truncate">{user?.email || ''}</p>
             </div>
-            <ChevronDown size={16} className="text-gray-400" />
+            <button
+              onClick={logout}
+              className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+              title="Cerrar sesión"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>

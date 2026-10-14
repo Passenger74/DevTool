@@ -1,19 +1,39 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { Task, Space, ViewMode } from './types';
+import { Task, Space, ViewMode, Team, Board, BoardColumn, GoogleCalendarConnection } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AppState {
   tasks: Task[];
   spaces: Space[];
+  teams: Team[];
+  boards: Board[];
+  calendarConnection: GoogleCalendarConnection;
   currentView: ViewMode;
   selectedSpace: string | null;
+  selectedBoard: string | null;
   sidebarOpen: boolean;
   setCurrentView: (view: ViewMode) => void;
   setSelectedSpace: (space: string | null) => void;
+  setSelectedBoard: (board: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   addTask: (task: Task) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, status: Task['status']) => void;
+  addTeam: (team: Team) => void;
+  updateTeam: (id: string, updates: Partial<Team>) => void;
+  deleteTeam: (id: string) => void;
+  addBoard: (board: Board) => void;
+  updateBoard: (id: string, updates: Partial<Board>) => void;
+  deleteBoard: (id: string) => void;
+  addBoardColumn: (boardId: string, column: BoardColumn) => void;
+  updateBoardColumn: (boardId: string, columnId: string, updates: Partial<BoardColumn>) => void;
+  deleteBoardColumn: (boardId: string, columnId: string) => void;
+  connectGoogleCalendar: (email: string) => void;
+  disconnectGoogleCalendar: () => void;
+  syncTaskToCalendar: (taskId: string) => void;
+  unsyncTaskFromCalendar: (taskId: string) => void;
+  syncAllTasks: () => void;
 }
 
 const defaultSpaces: Space[] = [
@@ -34,6 +54,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-15',
     tags: ['diseño', 'urgente'],
     createdAt: '2026-01-20',
+    boardId: 'board-1',
+    teamId: 'team-1',
   },
   {
     id: '2',
@@ -45,6 +67,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-10',
     tags: ['backend', 'seguridad'],
     createdAt: '2026-01-22',
+    boardId: 'board-1',
+    teamId: 'team-2',
   },
   {
     id: '3',
@@ -56,6 +80,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-20',
     tags: ['contenido', 'marketing'],
     createdAt: '2026-01-25',
+    boardId: 'board-2',
+    teamId: 'team-1',
   },
   {
     id: '4',
@@ -67,6 +93,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-05',
     tags: ['backend', 'performance'],
     createdAt: '2026-01-18',
+    boardId: 'board-1',
+    teamId: 'team-2',
   },
   {
     id: '5',
@@ -78,6 +106,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-03-01',
     tags: ['diseño', 'UI'],
     createdAt: '2026-01-28',
+    boardId: 'board-3',
+    teamId: 'team-3',
   },
   {
     id: '6',
@@ -89,6 +119,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-12',
     tags: ['devops', 'automatización'],
     createdAt: '2026-01-21',
+    boardId: 'board-1',
+    teamId: 'team-2',
   },
   {
     id: '7',
@@ -100,6 +132,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-25',
     tags: ['marketing', 'email'],
     createdAt: '2026-01-30',
+    boardId: 'board-2',
+    teamId: 'team-1',
   },
   {
     id: '8',
@@ -111,6 +145,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-18',
     tags: ['accesibilidad', 'QA'],
     createdAt: '2026-01-26',
+    boardId: 'board-3',
+    teamId: 'team-3',
   },
   {
     id: '9',
@@ -122,6 +158,8 @@ const defaultTasks: Task[] = [
     dueDate: '2026-02-08',
     tags: ['backend', 'pagos'],
     createdAt: '2026-01-29',
+    boardId: 'board-1',
+    teamId: 'team-2',
   },
   {
     id: '10',
@@ -133,48 +171,272 @@ const defaultTasks: Task[] = [
     dueDate: '2026-03-05',
     tags: ['documentación', 'API'],
     createdAt: '2026-01-27',
+    boardId: 'board-1',
+    teamId: 'team-2',
   },
 ];
+
+const defaultTeams: Team[] = [
+  {
+    id: 'team-1',
+    name: 'Marketing',
+    description: 'Estrategia de marketing y comunicación',
+    icon: '📢',
+    color: '#0D9488',
+    ownerId: 'user-1',
+    members: [
+      { userId: 'user-1', name: 'Juan Pérez', email: 'juan@gmail.com', avatar: 'JP', role: 'owner', joinedAt: '2026-01-01' },
+      { userId: 'user-2', name: 'María García', email: 'maria@gmail.com', avatar: 'MG', role: 'member', joinedAt: '2026-01-05' },
+      { userId: 'user-3', name: 'Ana Martínez', email: 'ana@gmail.com', avatar: 'AM', role: 'member', joinedAt: '2026-01-10' },
+    ],
+    createdAt: '2026-01-01',
+  },
+  {
+    id: 'team-2',
+    name: 'Desarrollo',
+    description: 'Equipo de ingeniería y desarrollo',
+    icon: '💻',
+    color: '#F97316',
+    ownerId: 'user-1',
+    members: [
+      { userId: 'user-1', name: 'Juan Pérez', email: 'juan@gmail.com', avatar: 'JP', role: 'owner', joinedAt: '2026-01-01' },
+      { userId: 'user-4', name: 'Carlos López', email: 'carlos@gmail.com', avatar: 'CL', role: 'admin', joinedAt: '2026-01-03' },
+      { userId: 'user-5', name: 'Pedro Sánchez', email: 'pedro@gmail.com', avatar: 'PS', role: 'member', joinedAt: '2026-01-08' },
+    ],
+    createdAt: '2026-01-01',
+  },
+  {
+    id: 'team-3',
+    name: 'Diseño',
+    description: 'Diseño UX/UI y branding',
+    icon: '🎨',
+    color: '#8B5CF6',
+    ownerId: 'user-3',
+    members: [
+      { userId: 'user-3', name: 'Ana Martínez', email: 'ana@gmail.com', avatar: 'AM', role: 'owner', joinedAt: '2026-01-02' },
+    ],
+    createdAt: '2026-01-02',
+  },
+];
+
+const defaultBoards: Board[] = [
+  {
+    id: 'board-1',
+    name: 'Sprint Actual',
+    description: 'Tareas del sprint en curso',
+    icon: '🚀',
+    teamId: 'team-2',
+    ownerId: 'user-1',
+    isArchived: false,
+    isPublic: false,
+    sharedWith: ['team-2'],
+    createdAt: '2026-01-15',
+    columns: [
+      { id: 'col-1', name: 'Por hacer', color: '#9CA3AF', order: 0 },
+      { id: 'col-2', name: 'En progreso', color: '#14B8A6', order: 1 },
+      { id: 'col-3', name: 'En revisión', color: '#8B5CF6', order: 2 },
+      { id: 'col-4', name: 'Completado', color: '#10B981', order: 3 },
+    ],
+  },
+  {
+    id: 'board-2',
+    name: 'Marketing Q1',
+    description: 'Campañas y contenido del primer trimestre',
+    icon: '📢',
+    teamId: 'team-1',
+    ownerId: 'user-1',
+    isArchived: false,
+    isPublic: true,
+    sharedWith: ['team-1'],
+    createdAt: '2026-01-10',
+    columns: [
+      { id: 'col-5', name: 'Ideas', color: '#F59E0B', order: 0 },
+      { id: 'col-6', name: 'En producción', color: '#14B8A6', order: 1 },
+      { id: 'col-7', name: 'Publicado', color: '#10B981', order: 2 },
+    ],
+  },
+  {
+    id: 'board-3',
+    name: 'Diseño de Producto',
+    description: 'Iteraciones de diseño y prototipos',
+    icon: '🎨',
+    teamId: 'team-3',
+    ownerId: 'user-3',
+    isArchived: false,
+    isPublic: false,
+    sharedWith: ['team-3'],
+    createdAt: '2026-01-20',
+    columns: [
+      { id: 'col-8', name: 'Backlog', color: '#9CA3AF', order: 0 },
+      { id: 'col-9', name: 'Diseñando', color: '#8B5CF6', order: 1 },
+      { id: 'col-10', name: 'Aprobado', color: '#10B981', order: 2 },
+    ],
+  },
+];
+
+const defaultCalendar: GoogleCalendarConnection = {
+  connected: false,
+  events: [],
+};
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [spaces] = useState<Space[]>(defaultSpaces);
+  const [teams, setTeams] = useState<Team[]>(defaultTeams);
+  const [boards, setBoards] = useState<Board[]>(defaultBoards);
+  const [calendarConnection, setCalendarConnection] = useState<GoogleCalendarConnection>(defaultCalendar);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
+  const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const addTask = (task: Task) => {
-    setTasks(prev => [task, ...prev]);
-  };
-
-  const updateTask = (id: string, updates: Partial<Task>) => {
+  // Tasks
+  const addTask = (task: Task) => setTasks(prev => [task, ...prev]);
+  const updateTask = (id: string, updates: Partial<Task>) =>
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  };
-
-  const deleteTask = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-  };
-
-  const moveTask = (id: string, status: Task['status']) => {
+  const deleteTask = (id: string) => setTasks(prev => prev.filter(t => t.id !== id));
+  const moveTask = (id: string, status: Task['status']) =>
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+
+  // Teams
+  const addTeam = (team: Team) => setTeams(prev => [...prev, team]);
+  const updateTeam = (id: string, updates: Partial<Team>) =>
+    setTeams(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  const deleteTeam = (id: string) => setTeams(prev => prev.filter(t => t.id !== id));
+
+  // Boards
+  const addBoard = (board: Board) => setBoards(prev => [...prev, board]);
+  const updateBoard = (id: string, updates: Partial<Board>) =>
+    setBoards(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+  const deleteBoard = (id: string) => setBoards(prev => prev.filter(b => b.id !== id));
+
+  const addBoardColumn = (boardId: string, column: BoardColumn) => {
+    setBoards(prev => prev.map(b =>
+      b.id === boardId ? { ...b, columns: [...b.columns, column] } : b
+    ));
+  };
+
+  const updateBoardColumn = (boardId: string, columnId: string, updates: Partial<BoardColumn>) => {
+    setBoards(prev => prev.map(b =>
+      b.id === boardId
+        ? { ...b, columns: b.columns.map(c => c.id === columnId ? { ...c, ...updates } : c) }
+        : b
+    ));
+  };
+
+  const deleteBoardColumn = (boardId: string, columnId: string) => {
+    setBoards(prev => prev.map(b =>
+      b.id === boardId
+        ? { ...b, columns: b.columns.filter(c => c.id !== columnId) }
+        : b
+    ));
+  };
+
+  // Google Calendar
+  const connectGoogleCalendar = (email: string) => {
+    setCalendarConnection({
+      connected: true,
+      email,
+      calendarId: 'primary',
+      lastSync: new Date().toISOString(),
+      events: [],
+    });
+  };
+
+  const disconnectGoogleCalendar = () => {
+    setCalendarConnection({ connected: false, events: [] });
+  };
+
+  const syncTaskToCalendar = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.dueDate) return;
+
+    const eventId = uuidv4();
+    setCalendarConnection(prev => ({
+      ...prev,
+      lastSync: new Date().toISOString(),
+      events: [...prev.events, {
+        id: eventId,
+        taskId,
+        title: task.title,
+        start: `${task.dueDate}T09:00:00`,
+        end: `${task.dueDate}T10:00:00`,
+        description: task.description,
+        synced: true,
+      }],
+    }));
+    updateTask(taskId, { syncedToCalendar: true, calendarEventId: eventId });
+  };
+
+  const unsyncTaskFromCalendar = (taskId: string) => {
+    setCalendarConnection(prev => ({
+      ...prev,
+      events: prev.events.filter(e => e.taskId !== taskId),
+    }));
+    updateTask(taskId, { syncedToCalendar: false, calendarEventId: undefined });
+  };
+
+  const syncAllTasks = () => {
+    const tasksWithDates = tasks.filter(t => t.dueDate && !t.syncedToCalendar);
+    const newEvents = tasksWithDates.map(task => ({
+      id: uuidv4(),
+      taskId: task.id,
+      title: task.title,
+      start: `${task.dueDate}T09:00:00`,
+      end: `${task.dueDate}T10:00:00`,
+      description: task.description,
+      synced: true,
+    }));
+
+    setCalendarConnection(prev => ({
+      ...prev,
+      lastSync: new Date().toISOString(),
+      events: [...prev.events, ...newEvents],
+    }));
+
+    tasksWithDates.forEach(task => {
+      const event = newEvents.find(e => e.taskId === task.id);
+      if (event) {
+        updateTask(task.id, { syncedToCalendar: true, calendarEventId: event.id });
+      }
+    });
   };
 
   return (
     <AppContext.Provider value={{
       tasks,
       spaces,
+      teams,
+      boards,
+      calendarConnection,
       currentView,
       selectedSpace,
+      selectedBoard,
       sidebarOpen,
       setCurrentView,
       setSelectedSpace,
+      setSelectedBoard,
       setSidebarOpen,
       addTask,
       updateTask,
       deleteTask,
       moveTask,
+      addTeam,
+      updateTeam,
+      deleteTeam,
+      addBoard,
+      updateBoard,
+      deleteBoard,
+      addBoardColumn,
+      updateBoardColumn,
+      deleteBoardColumn,
+      connectGoogleCalendar,
+      disconnectGoogleCalendar,
+      syncTaskToCalendar,
+      unsyncTaskFromCalendar,
+      syncAllTasks,
     }}>
       {children}
     </AppContext.Provider>

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { tasks } = useApp();
+  const { tasks, teams, boards, calendarConnection } = useApp();
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'done').length;
@@ -212,6 +212,104 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-800">{member.name}</p>
                 <p className="text-xs text-gray-400">{member.tasks} tareas activas</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Teams & Calendar Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Teams Overview */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-800">Tus Equipos</h3>
+            <span className="text-xs text-gray-400">{teams.length} equipos</span>
+          </div>
+          <div className="space-y-2">
+            {teams.slice(0, 3).map(team => (
+              <div key={team.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                  style={{ backgroundColor: `${team.color}20` }}
+                >
+                  {team.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{team.name}</p>
+                  <p className="text-xs text-gray-400">{team.members.length} miembros</p>
+                </div>
+                <div className="flex -space-x-1">
+                  {team.members.slice(0, 3).map((m, i) => (
+                    <div
+                      key={i}
+                      className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-orange-400 flex items-center justify-center text-white text-[9px] font-bold border-2 border-white"
+                    >
+                      {m.avatar}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Calendar Status */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-800">Google Calendar</h3>
+            {calendarConnection.connected ? (
+              <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                Conectado
+              </span>
+            ) : (
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                No conectado
+              </span>
+            )}
+          </div>
+          {calendarConnection.connected ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-teal-50 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold text-teal-600">{calendarConnection.events.length}</p>
+                  <p className="text-xs text-teal-700">Eventos</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold text-orange-600">{tasks.filter(t => t.syncedToCalendar).length}</p>
+                  <p className="text-xs text-orange-700">Sincronizados</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Última sincronización: {calendarConnection.lastSync ? new Date(calendarConnection.lastSync).toLocaleString('es-ES') : 'Nunca'}
+              </p>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-500 mb-2">Conecta tu calendario para sincronizar tareas</p>
+              <p className="text-xs text-gray-400">Ve a Configuración → Integraciones</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Boards Overview */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-800">Tableros Activos</h3>
+          <span className="text-xs text-gray-400">{boards.filter(b => !b.isArchived).length} tableros</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {boards.filter(b => !b.isArchived).slice(0, 3).map(board => (
+            <div key={board.id} className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">{board.icon}</span>
+                <h4 className="text-sm font-medium text-gray-800 truncate">{board.name}</h4>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{board.columns.length} columnas</span>
+                <span>{tasks.filter(t => t.boardId === board.id).length} tareas</span>
               </div>
             </div>
           ))}

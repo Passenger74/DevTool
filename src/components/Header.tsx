@@ -1,18 +1,21 @@
 import { useApp } from '../store';
-import { Menu, Search, Bell, Plus } from 'lucide-react';
+import { Menu, Search, Bell, Plus, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
   onNewTask: () => void;
 }
 
 export default function Header({ onNewTask }: HeaderProps) {
-  const { setSidebarOpen, currentView } = useApp();
+  const { setSidebarOpen, currentView, calendarConnection } = useApp();
 
   const viewTitles: Record<string, string> = {
     dashboard: 'Dashboard',
     list: 'Lista de Tareas',
     board: 'Tablero Kanban',
     calendar: 'Calendario',
+    teams: 'Equipos',
+    boards: 'Tableros',
+    settings: 'Configuración',
   };
 
   return (
@@ -45,6 +48,14 @@ export default function Header({ onNewTask }: HeaderProps) {
               className="ml-2 bg-transparent text-sm outline-none w-40 lg:w-56 placeholder-gray-400"
             />
           </div>
+
+          {/* Calendar Sync Indicator */}
+          {calendarConnection.connected && (
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1.5 bg-green-50 rounded-lg border border-green-100" title="Google Calendar sincronizado">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-xs text-green-700 font-medium">Calendar</span>
+            </div>
+          )}
 
           {/* Notifications */}
           <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
