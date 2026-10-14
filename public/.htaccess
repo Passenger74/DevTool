@@ -1,36 +1,144 @@
+# ==============================================================================
+# TaskFlow - Configuración Apache para SPA (Single Page Application)
+# ==============================================================================
+
+# Proteger archivos sensibles
+<FilesMatch "\.(env|git|gitignore|log|sh|ps1|md)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# ==============================================================================
+# REWRITE RULES - SPA Routing
+# ==============================================================================
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+  
+  # Redirigir HTTP a HTTPS (descomentar si tienes SSL)
+  # RewriteCond %{HTTPS} off
+  # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  
+  # Redirigir www a non-www (descomentar si es necesario)
+  # RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+  # RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
+  
+  # No redirigir archivos que existen
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # Redirigir todo lo demás a index.html (SPA)
+  RewriteRule ^ index.html [L]
 </IfModule>
 
-# Cache control for assets
+# ==============================================================================
+# CACHE CONTROL - Optimización de rendimiento
+# ==============================================================================
 <IfModule mod_expires.c>
   ExpiresActive On
+  
+  # HTML - Cache corto
+  ExpiresByType text/html "access plus 1 hour"
+  
+  # CSS y JavaScript - Cache largo (Vite usa hashes)
   ExpiresByType text/css "access plus 1 year"
   ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  
+  # Imágenes - Cache largo
   ExpiresByType image/png "access plus 1 year"
   ExpiresByType image/jpg "access plus 1 year"
   ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
   ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  
+  # Fuentes - Cache largo
   ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType font/otf "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+  
+  # Otros archivos estáticos
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
 </IfModule>
 
-# Compression
+# ==============================================================================
+# COMPRESSION - Reducir tamaño de transferencia
+# ==============================================================================
 <IfModule mod_deflate.c>
+  # Comprimir texto y código
   AddOutputFilterByType DEFLATE text/html
   AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
   AddOutputFilterByType DEFLATE application/javascript
   AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/plain
   AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/truetype
+  AddOutputFilterByType DEFLATE font/opentype
 </IfModule>
 
-# Security headers
+# ==============================================================================
+# SECURITY HEADERS - Protección del sitio
+# ==============================================================================
 <IfModule mod_headers.c>
+  # Prevenir MIME type sniffing
   Header set X-Content-Type-Options "nosniff"
+  
+  # Protección contra clickjacking
   Header set X-Frame-Options "SAMEORIGIN"
+  
+  # Protección XSS
   Header set X-XSS-Protection "1; mode=block"
+  
+  # Referrer Policy
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  
+  # Permissions Policy (reemplaza Feature-Policy)
+  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  
+  # Content Security Policy (ajustar según necesidades)
+  # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';"
 </IfModule>
+
+# ==============================================================================
+# PERFORMANCE - Optimizaciones adicionales
+# ==============================================================================
+<IfModule mod_headers.c>
+  # Cache para assets con hash (Vite)
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # No cachear HTML
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ==============================================================================
+# ERROR PAGES - Páginas de error personalizadas
+# ==============================================================================
+ErrorDocument 404 /index.html
+ErrorDocument 403 /index.html
+ErrorDocument 500 /index.html
+
+# ==============================================================================
+# MISCELLANEOUS - Configuraciones adicionales
+# ==============================================================================
+
+# Deshabilitar listado de directorios
+Options -Indexes
+
+# Establecer charset por defecto
+AddDefaultCharset UTF-8
+
+# Habilitar ETags
+FileETag MTime Size
