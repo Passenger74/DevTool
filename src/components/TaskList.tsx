@@ -12,6 +12,7 @@ import {
   Trash2,
   Edit3,
 } from 'lucide-react';
+import { formatShortDate, getInitials, priorityLabels } from '../utils';
 
 interface TaskListProps {
   onEditTask: (task: Task) => void;
@@ -94,6 +95,7 @@ export default function TaskList({ onEditTask }: TaskListProps) {
               {/* Checkbox */}
               <button
                 onClick={() => toggleComplete(task)}
+                aria-label={task.status === 'done' ? 'Marcar como pendiente' : 'Marcar como completada'}
                 className="mt-0.5 flex-shrink-0"
               >
                 {task.status === 'done' ? (
@@ -115,7 +117,9 @@ export default function TaskList({ onEditTask }: TaskListProps) {
                   <div className="relative">
                     <button
                       onClick={() => setOpenMenu(openMenu === task.id ? null : task.id)}
-                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-100 transition-all"
+                      aria-label="Opciones de la tarea"
+                      aria-expanded={openMenu === task.id}
+                      className="p-1 rounded sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-gray-100 transition-all"
                     >
                       <MoreHorizontal size={16} className="text-gray-400" />
                     </button>
@@ -142,7 +146,7 @@ export default function TaskList({ onEditTask }: TaskListProps) {
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${priorityConfig[task.priority].color}`}>
                     {priorityConfig[task.priority].icon}
-                    {task.priority}
+                    {priorityLabels[task.priority]}
                   </span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusConfig[task.status].color}`}>
                     {statusConfig[task.status].label}
@@ -150,12 +154,12 @@ export default function TaskList({ onEditTask }: TaskListProps) {
                   {task.dueDate && (
                     <span className="text-xs text-gray-400 flex items-center gap-1">
                       <Clock size={12} />
-                      {new Date(task.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      {formatShortDate(task.dueDate)}
                     </span>
                   )}
                   <div className="flex items-center gap-1 ml-auto">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-orange-400 flex items-center justify-center text-white text-[10px] font-bold">
-                      {task.assignee.split(' ').map(n => n[0]).join('')}
+                      {getInitials(task.assignee)}
                     </div>
                     <span className="text-xs text-gray-400 hidden sm:inline">{task.assignee.split(' ')[0]}</span>
                   </div>

@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CalendarView() {
   const { tasks } = useApp();
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1)); // Feb 2026
+  const today = new Date();
+  const [currentDate, setCurrentDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -40,7 +41,8 @@ export default function CalendarView() {
   }
   for (let day = 1; day <= daysInMonth; day++) {
     const dayTasks = getTasksForDay(day);
-    const isToday = day === 15 && month === 1 && year === 2026;
+    const isToday =
+      day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
     days.push(
       <div
         key={day}
@@ -80,12 +82,14 @@ export default function CalendarView() {
         <div className="flex items-center gap-2">
           <button
             onClick={prevMonth}
+            aria-label="Mes anterior"
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <ChevronLeft size={18} className="text-gray-600" />
           </button>
           <button
             onClick={nextMonth}
+            aria-label="Mes siguiente"
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <ChevronRight size={18} className="text-gray-600" />
