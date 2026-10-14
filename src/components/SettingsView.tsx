@@ -27,15 +27,57 @@ export default function SettingsView() {
 
   // Profile form state
   const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [location, setLocation] = useState(user?.location || '');
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    // Validaciones
+    if (!name.trim()) {
+      setError('El nombre es obligatorio');
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('El email es obligatorio');
+      return;
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('El formato del email no es válido');
+      return;
+    }
+
+    // Verificar si el email cambió y ya existe otro usuario con ese email
+    if (email !== user?.email) {
+      const usersStore = localStorage.getItem('taskflow_users');
+      if (usersStore) {
+        try {
+          const users = JSON.parse(usersStore);
+          const emailExists = users.some((u: any) => 
+            u.email.toLowerCase() === email.toLowerCase() && u.id !== user?.id
+          );
+          if (emailExists) {
+            setError('Este email ya está registrado por otro usuario');
+            return;
+          }
+        } catch (e) {
+          console.error('Error al verificar email:', e);
+        }
+      }
+    }
+
     updateUser({
-      name,
+      name: name.trim(),
+      email: email.trim(),
       bio,
       phone,
       location,
@@ -96,13 +138,24 @@ export default function SettingsView() {
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
+          {/* Mensaje de error */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
+                placeholder="Juan Pérez"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
                 style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
                 onFocus={e => e.target.style.borderColor = theme.primary}
@@ -113,10 +166,22 @@ export default function SettingsView() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
-                value={user?.email || ''}
-                disabled
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                onFocus={e => e.target.style.borderColor = theme.primary}
+                onBlur={e => e.target.style.borderColor = ''}
               />
+              {email !== user?.email && (
+                <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Cambiar el email requerirá verificar la nueva dirección
+                </p>
+              )}
             </div>
           </div>
 
