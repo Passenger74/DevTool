@@ -1,3 +1,4 @@
+import { DragEvent } from 'react';
 import { useApp } from '../store';
 import { Task, Status } from '../types';
 import { Plus, GripVertical } from 'lucide-react';
@@ -25,11 +26,11 @@ export default function KanbanBoard({ onEditTask }: KanbanBoardProps) {
 
   const getTasksByStatus = (status: Status) => tasks.filter(t => t.status === status);
 
-  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+  const handleDragStart = (e: DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId);
   };
 
-  const handleDrop = (e: React.DragEvent, status: Status) => {
+  const handleDrop = (e: DragEvent, status: Status) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
     if (taskId) {
@@ -37,7 +38,7 @@ export default function KanbanBoard({ onEditTask }: KanbanBoardProps) {
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
   };
 

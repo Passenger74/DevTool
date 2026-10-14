@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { useApp } from '../store';
 import { Task, Priority, Status } from '../types';
 import {
@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   MoreHorizontal,
   Filter,
-  SortAsc,
   Trash2,
   Edit3,
 } from 'lucide-react';
@@ -29,7 +28,7 @@ export default function TaskList({ onEditTask }: TaskListProps) {
     return true;
   });
 
-  const priorityConfig: Record<Priority, { color: string; icon: React.ReactNode }> = {
+  const priorityConfig: Record<Priority, { color: string; icon: ReactNode }> = {
     urgent: { color: 'text-red-500 bg-red-50', icon: <AlertTriangle size={14} /> },
     high: { color: 'text-orange-500 bg-orange-50', icon: <AlertTriangle size={14} /> },
     medium: { color: 'text-yellow-600 bg-yellow-50', icon: <Clock size={14} /> },

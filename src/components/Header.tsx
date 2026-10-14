@@ -1,5 +1,5 @@
 import { useApp } from '../store';
-import { Menu, Search, Bell, Plus, RefreshCw } from 'lucide-react';
+import { Menu, Search, Bell, Plus } from 'lucide-react';
 
 interface HeaderProps {
   onNewTask: () => void;

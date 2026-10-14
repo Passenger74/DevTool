@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useApp } from '../store';
 import { useAuth } from '../auth';
 import { Board, BoardColumn, Team } from '../types';
@@ -348,7 +348,7 @@ function CreateBoardModal({ teams, onClose, onCreate }: {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     onCreate({ name, description, icon, teamId, isPublic });
@@ -457,7 +457,7 @@ function ColumnModal({ onClose, onAdd }: {
   const [name, setName] = useState('');
   const [color, setColor] = useState(columnColors[0]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     onAdd(name, color);
@@ -532,7 +532,7 @@ function EditBoardModal({ board, teams, onClose, onSave, onArchive, onDelete }: 
   const [teamId, setTeamId] = useState(board.teamId);
   const [isPublic, setIsPublic] = useState(board.isPublic);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSave({ name, description, icon, teamId, isPublic });
   };

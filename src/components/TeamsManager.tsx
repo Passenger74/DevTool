@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode, FormEvent } from 'react';
 import { useApp } from '../store';
 import { useAuth } from '../auth';
 import { Team, TeamMember, UserRole } from '../types';
@@ -21,7 +21,7 @@ import {
 const teamIcons = ['💼', '🚀', '🎯', '💡', '🔥', '⭐', '🎨', '💻', '📊', '🌟'];
 const teamColors = ['#0D9488', '#F97316', '#8B5CF6', '#06B6D4', '#EC4899', '#10B981', '#F59E0B', '#EF4444'];
 
-const roleConfig: Record<UserRole, { label: string; icon: React.ReactNode; color: string }> = {
+const roleConfig: Record<UserRole, { label: string; icon: ReactNode; color: string }> = {
   owner: { label: 'Propietario', icon: <Crown size={14} />, color: 'text-yellow-600 bg-yellow-50' },
   admin: { label: 'Admin', icon: <Shield size={14} />, color: 'text-teal-600 bg-teal-50' },
   member: { label: 'Miembro', icon: <User size={14} />, color: 'text-gray-600 bg-gray-100' },
@@ -228,7 +228,7 @@ function CreateTeamModal({ onClose, onCreate }: {
   const [icon, setIcon] = useState(teamIcons[0]);
   const [color, setColor] = useState(teamColors[0]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     onCreate({ name, description, icon, color });
@@ -446,7 +446,7 @@ function AddMemberModal({ team, onClose, onAdd }: {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('member');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     onAdd(email, role);

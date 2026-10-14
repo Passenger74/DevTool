@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Task, Priority, Status } from '../types';
 import { X, Save, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,7 +40,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
     }
   }, [task, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 

@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { useApp } from '../store';
 import { useAuth } from '../auth';
 import { ViewMode } from '../types';
@@ -10,12 +11,11 @@ import {
   LayoutGrid,
   Settings,
   X,
-  ChevronDown,
   Zap,
   LogOut,
 } from 'lucide-react';
 
-const navItems: { id: ViewMode; label: string; icon: React.ReactNode; section?: string }[] = [
+const navItems: { id: ViewMode; label: string; icon: ReactNode; section?: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, section: 'Principal' },
   { id: 'list', label: 'Lista', icon: <List size={20} /> },
   { id: 'board', label: 'Tablero Kanban', icon: <Columns size={20} /> },
