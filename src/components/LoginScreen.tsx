@@ -1,9 +1,35 @@
-import { useState } from 'react';
+import { useState, useCallback, CSSProperties } from 'react';
 import { useAuth } from '../auth';
 import { useTheme } from '../theme';
 import { Zap, Shield, Users, Calendar, CheckCircle2, Mail, Lock, User as UserIcon, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
 
+// Tipo para estilos con variables CSS personalizadas
+interface CustomCSSProperties extends CSSProperties {
+  '--tw-ring-color'?: string;
+}
+
 type AuthView = 'main' | 'login-email' | 'register';
+
+// Funciones helper fuera del componente para evitar recrearlas en cada render
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { score: 1, label: 'Muy débil', color: '#ef4444' };
+  if (score === 2) return { score: 2, label: 'Débil', color: '#f97316' };
+  if (score === 3) return { score: 3, label: 'Media', color: '#eab308' };
+  if (score === 4) return { score: 4, label: 'Fuerte', color: '#22c55e' };
+  return { score: 5, label: 'Muy fuerte', color: '#10b981' };
+};
 
 export default function LoginScreen() {
   const { loginWithGoogle, loginWithCredentials, register, isLoading } = useAuth();
@@ -91,7 +117,7 @@ export default function LoginScreen() {
     }
   };
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     setView('main');
     setError('');
     setSuccess('');
@@ -99,27 +125,7 @@ export default function LoginScreen() {
     setPassword('');
     setConfirmPassword('');
     setName('');
-  };
-
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
-    let score = 0;
-    if (password.length >= 6) score++;
-    if (password.length >= 10) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    if (score <= 1) return { score: 1, label: 'Muy débil', color: '#ef4444' };
-    if (score === 2) return { score: 2, label: 'Débil', color: '#f97316' };
-    if (score === 3) return { score: 3, label: 'Media', color: '#eab308' };
-    if (score === 4) return { score: 4, label: 'Fuerte', color: '#22c55e' };
-    return { score: 5, label: 'Muy fuerte', color: '#10b981' };
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center p-4">
@@ -292,7 +298,7 @@ export default function LoginScreen() {
                       onChange={e => setEmail(e.target.value)}
                       placeholder="tu@email.com"
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                      style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                       onFocus={e => e.target.style.borderColor = theme.primary}
                       onBlur={e => e.target.style.borderColor = ''}
                       required
@@ -314,7 +320,7 @@ export default function LoginScreen() {
                       onChange={e => setPassword(e.target.value)}
                       placeholder="••••••••"
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                      style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                       onFocus={e => e.target.style.borderColor = theme.primary}
                       onBlur={e => e.target.style.borderColor = ''}
                       required
@@ -391,7 +397,7 @@ export default function LoginScreen() {
                       onChange={e => setName(e.target.value)}
                       placeholder="Juan Pérez"
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                      style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                       onFocus={e => e.target.style.borderColor = theme.primary}
                       onBlur={e => e.target.style.borderColor = ''}
                       required
@@ -410,7 +416,7 @@ export default function LoginScreen() {
                       onChange={e => setEmail(e.target.value)}
                       placeholder="tu@email.com"
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                      style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                       onFocus={e => e.target.style.borderColor = theme.primary}
                       onBlur={e => e.target.style.borderColor = ''}
                       required
@@ -431,7 +437,7 @@ export default function LoginScreen() {
                       onChange={e => setPassword(e.target.value)}
                       placeholder="Mínimo 6 caracteres"
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                      style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                       onFocus={e => e.target.style.borderColor = theme.primary}
                       onBlur={e => e.target.style.borderColor = ''}
                       minLength={6}
@@ -477,7 +483,7 @@ export default function LoginScreen() {
                       onChange={e => setConfirmPassword(e.target.value)}
                       placeholder="Repite tu contraseña"
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                      style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                       onFocus={e => e.target.style.borderColor = theme.primary}
                       onBlur={e => e.target.style.borderColor = ''}
                       required
