@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, CSSProperties } from 'react';
 import { useAuth } from '../auth';
 import { useApp } from '../store';
 import { useTheme } from '../theme';
-import { ThemeName } from '../types';
+import { ThemeName, User as UserType } from '../types';
 import {
   User,
   Bell,
@@ -24,7 +24,13 @@ import {
   EyeOff,
   Trash2,
   Key,
+  Loader2,
 } from 'lucide-react';
+
+// Tipo para estilos con variables CSS personalizadas
+interface CustomCSSProperties extends CSSProperties {
+  '--tw-ring-color'?: string;
+}
 
 export default function SettingsView() {
   const { user, updateUser, deleteUser, changePassword } = useAuth();
@@ -39,6 +45,7 @@ export default function SettingsView() {
   const [location, setLocation] = useState(user?.location || '');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Modals state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -52,6 +59,7 @@ export default function SettingsView() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Delete confirmation state
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -87,18 +95,21 @@ export default function SettingsView() {
     }
   }, [user?.id]);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSaving(true);
 
     // Validaciones
     if (!name.trim()) {
       setError('El nombre es obligatorio');
+      setSaving(false);
       return;
     }
 
     if (!email.trim()) {
       setError('El email es obligatorio');
+      setSaving(false);
       return;
     }
 
@@ -106,6 +117,7 @@ export default function SettingsView() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('El formato del email no es válido');
+      setSaving(false);
       return;
     }
 
@@ -114,19 +126,23 @@ export default function SettingsView() {
       const usersStore = localStorage.getItem('taskflow_users');
       if (usersStore) {
         try {
-          const users = JSON.parse(usersStore);
-          const emailExists = users.some((u: any) => 
+          const users: Array<UserType & { password: string }> = JSON.parse(usersStore);
+          const emailExists = users.some((u) => 
             u.email.toLowerCase() === email.toLowerCase() && u.id !== user?.id
           );
           if (emailExists) {
             setError('Este email ya está registrado por otro usuario');
+            setSaving(false);
             return;
           }
-        } catch (e) {
-          console.error('Error al verificar email:', e);
+        } catch (err) {
+          console.error('Error al verificar email:', err);
         }
       }
     }
+
+    // Simular delay de red
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     updateUser({
       name: name.trim(),
@@ -134,10 +150,12 @@ export default function SettingsView() {
       bio,
       phone,
       location,
-      avatar: name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+      avatar: name.split(' ').filter(n => n).map(n => n[0]).join('').substring(0, 2).toUpperCase(),
     });
+    
+    setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 3000);
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -175,11 +193,14 @@ export default function SettingsView() {
     setPasswordLoading(false);
 
     if (result.success) {
-      setShowPasswordModal(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      alert('Contraseña cambiada exitosamente');
+      setPasswordSuccess(true);
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordSuccess(false);
+      }, 1500);
     } else {
       setPasswordError(result.error || 'Error al cambiar la contraseña');
     }
@@ -202,6 +223,32 @@ export default function SettingsView() {
     }
     // Si es exitoso, el usuario será redirigido automáticamente al login
   };
+
+  // Handler para cerrar modales con Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showPasswordModal) {
+          setShowPasswordModal(false);
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+          setPasswordError('');
+          setPasswordSuccess(false);
+        }
+        if (showDeleteModal) {
+          setShowDeleteModal(false);
+          setDeleteConfirmation('');
+          setDeleteError('');
+        }
+      }
+    };
+
+    if (showPasswordModal || showDeleteModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showPasswordModal, showDeleteModal]);
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
@@ -271,7 +318,7 @@ export default function SettingsView() {
                 onChange={e => setName(e.target.value)}
                 placeholder="Juan Pérez"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
-                style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                style={{ '--tw-ring-color': theme.primaryLight } as CustomCSSProperties}
                 onFocus={e => e.target.style.borderColor = theme.primary}
                 onBlur={e => e.target.style.borderColor = ''}
               />
@@ -352,19 +399,28 @@ export default function SettingsView() {
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
-            {saved && (
-              <span className="flex items-center gap-1 text-sm text-green-600">
-                <Check size={16} />
-                Guardado
-              </span>
-            )}
             <button
               type="submit"
-              className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm transition-all"
-              style={{ background: theme.gradient }}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm transition-all disabled:opacity-50"
+              style={{ background: saved ? '#10b981' : theme.gradient }}
             >
-              <Save size={16} />
-              Guardar cambios
+              {saving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Guardando...
+                </>
+              ) : saved ? (
+                <>
+                  <Check size={16} />
+                  ¡Guardado!
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Guardar cambios
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -535,7 +591,7 @@ export default function SettingsView() {
                 style={{
                   backgroundColor: notifications[item.key] ? theme.primary : '#d1d5db',
                   '--tw-ring-color': theme.primaryLight,
-                } as React.CSSProperties}
+                } as CustomCSSProperties}
               >
                 <span
                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -642,8 +698,20 @@ export default function SettingsView() {
 
       {/* ========== CHANGE PASSWORD MODAL ========== */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPasswordModal(false);
+              setCurrentPassword('');
+              setNewPassword('');
+              setConfirmPassword('');
+              setPasswordError('');
+              setPasswordSuccess(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Key size={20} style={{ color: theme.primary }} />
@@ -664,7 +732,13 @@ export default function SettingsView() {
             </div>
 
             <form onSubmit={handleChangePassword} className="space-y-4">
-              {passwordError && (
+              {passwordSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center gap-2">
+                  <CheckCircle2 size={16} className="flex-shrink-0" />
+                  Contraseña cambiada exitosamente
+                </div>
+              )}
+              {passwordError && !passwordSuccess && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
                   <XCircle size={16} className="flex-shrink-0" />
                   {passwordError}
@@ -741,13 +815,18 @@ export default function SettingsView() {
                 </button>
                 <button
                   type="submit"
-                  disabled={passwordLoading}
+                  disabled={passwordLoading || passwordSuccess}
                   className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm transition-all disabled:opacity-50"
-                  style={{ background: theme.gradient }}
+                  style={{ background: passwordSuccess ? '#10b981' : theme.gradient }}
                 >
-                  {passwordLoading ? (
+                  {passwordSuccess ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <Check size={16} />
+                      ¡Completado!
+                    </>
+                  ) : passwordLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
                       Cambiando...
                     </>
                   ) : (
@@ -765,8 +844,17 @@ export default function SettingsView() {
 
       {/* ========== DELETE ACCOUNT MODAL ========== */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteModal(false);
+              setDeleteConfirmation('');
+              setDeleteError('');
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-red-700 flex items-center gap-2">
                 <AlertTriangle size={20} />
@@ -834,7 +922,7 @@ export default function SettingsView() {
                 >
                   {deleteLoading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <Loader2 size={16} className="animate-spin" />
                       Eliminando...
                     </>
                   ) : (
