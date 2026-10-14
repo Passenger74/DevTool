@@ -15,9 +15,11 @@ export default function LoginScreen() {
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const features = [
     { icon: <Users size={20} />, title: 'Equipos colaborativos', desc: 'Gestiona equipos y roles' },
@@ -29,6 +31,21 @@ export default function LoginScreen() {
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validaciones
+    if (!email.trim()) {
+      setError('El email es obligatorio');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('El formato del email no es válido');
+      return;
+    }
+    if (!password) {
+      setError('La contraseña es obligatoria');
+      return;
+    }
+    
     const result = await loginWithCredentials(email, password);
     if (!result.success) {
       setError(result.error || 'Error al iniciar sesión');
@@ -38,22 +55,76 @@ export default function LoginScreen() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    
+    // Validaciones
     if (!name.trim()) {
       setError('El nombre es obligatorio');
       return;
     }
+    if (name.trim().length < 2) {
+      setError('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+    if (!email.trim()) {
+      setError('El email es obligatorio');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('El formato del email no es válido');
+      return;
+    }
+    if (!password) {
+      setError('La contraseña es obligatoria');
+      return;
+    }
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+    
     const result = await register(name, email, password);
     if (!result.success) {
       setError(result.error || 'Error al registrarse');
+    } else {
+      setSuccess('¡Cuenta creada exitosamente!');
     }
   };
 
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setError('');
+    setSuccess('');
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setName('');
+  };
+
+  // Validar formato de email
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Calcular fortaleza de contraseña
+  const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+    let score = 0;
+    if (password.length >= 6) score++;
+    if (password.length >= 10) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 1) return { score: 1, label: 'Muy débil', color: '#ef4444' };
+    if (score === 2) return { score: 2, label: 'Débil', color: '#f97316' };
+    if (score === 3) return { score: 3, label: 'Media', color: '#eab308' };
+    if (score === 4) return { score: 4, label: 'Fuerte', color: '#22c55e' };
+    return { score: 5, label: 'Muy fuerte', color: '#10b981' };
   };
 
   return (
@@ -220,6 +291,9 @@ export default function LoginScreen() {
                     required
                   />
                 </div>
+                {email && !isValidEmail(email) && (
+                  <p className="text-xs text-orange-600 mt-1">Formato de email inválido</p>
+                )}
               </div>
 
               <div>
@@ -249,7 +323,7 @@ export default function LoginScreen() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (email.length > 0 && !isValidEmail(email))}
                 className="w-full py-3 px-4 rounded-xl text-white font-medium shadow-sm hover:shadow-md transition-all disabled:opacity-50"
                 style={{ background: theme.gradient }}
               >
@@ -277,6 +351,12 @@ export default function LoginScreen() {
                 <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                   <AlertCircle size={16} />
                   <span>{error}</span>
+                </div>
+              )}
+              {success && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                  <CheckCircle2 size={16} />
+                  <span>{success}</span>
                 </div>
               )}
 
@@ -313,6 +393,9 @@ export default function LoginScreen() {
                     onBlur={e => e.target.style.borderColor = ''}
                     required
                   />
+                  {email && !isValidEmail(email) && (
+                    <p className="text-xs text-orange-600 mt-1">Formato de email inválido</p>
+                  )}
                 </div>
               </div>
 
@@ -340,8 +423,53 @@ export default function LoginScreen() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {password && password.length < 6 && (
-                  <p className="text-xs text-orange-600 mt-1">La contraseña debe tener al menos 6 caracteres</p>
+                {/* Password Strength Indicator */}
+                {password && (
+                  <div className="mt-2">
+                    <div className="flex gap-1 mb-1">
+                      {[1, 2, 3, 4, 5].map(level => (
+                        <div
+                          key={level}
+                          className="h-1 flex-1 rounded-full transition-all"
+                          style={{
+                            backgroundColor: level <= getPasswordStrength(password).score
+                              ? getPasswordStrength(password).color
+                              : '#e5e7eb'
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs" style={{ color: getPasswordStrength(password).color }}>
+                      {getPasswordStrength(password).label}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Repite tu contraseña"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                    style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                    onFocus={e => e.target.style.borderColor = theme.primary}
+                    onBlur={e => e.target.style.borderColor = ''}
+                    required
+                  />
+                </div>
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-xs text-orange-600 mt-1">Las contraseñas no coinciden</p>
+                )}
+                {confirmPassword && password === confirmPassword && confirmPassword.length > 0 && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <CheckCircle2 size={12} />
+                    Las contraseñas coinciden
+                  </p>
                 )}
               </div>
 
