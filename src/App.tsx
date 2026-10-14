@@ -12,7 +12,6 @@ import TaskModal from './components/TaskModal';
 import LoginScreen from './components/LoginScreen';
 import TeamsManager from './components/TeamsManager';
 import BoardsManager from './components/BoardsManager';
-import GoogleCalendarIntegration from './components/GoogleCalendarIntegration';
 import SettingsView from './components/SettingsView';
 
 function AppContent() {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store';
 import { useAuth } from '../auth';
-import { Board, BoardColumn } from '../types';
+import { Board, BoardColumn, Team } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Plus,
@@ -338,7 +338,7 @@ export default function BoardsManager() {
 
 // ========== Create Board Modal ==========
 function CreateBoardModal({ teams, onClose, onCreate }: {
-  teams: any[];
+  teams: Team[];
   onClose: () => void;
   onCreate: (data: { name: string; description: string; icon: string; teamId: string | null; isPublic: boolean }) => void;
 }) {
@@ -520,7 +520,7 @@ function ColumnModal({ onClose, onAdd }: {
 // ========== Edit Board Modal ==========
 function EditBoardModal({ board, teams, onClose, onSave, onArchive, onDelete }: {
   board: Board;
-  teams: any[];
+  teams: Team[];
   onClose: () => void;
   onSave: (updates: Partial<Board>) => void;
   onArchive: () => void;
@@ -596,7 +596,7 @@ function EditBoardModal({ board, teams, onClose, onSave, onArchive, onDelete }: 
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-400"
             >
               <option value="">Personal</option>
-              {teams.map((t: any) => (
+              {teams.map((t: Team) => (
                 <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
               ))}
             </select>

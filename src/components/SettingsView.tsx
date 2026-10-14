@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsView() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { calendarConnection } = useApp();
 
   return (
