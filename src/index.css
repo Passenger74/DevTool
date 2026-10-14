@@ -19,6 +19,17 @@
   --color-orange-700: #c2410c;
 }
 
+:root {
+  /* Variables de tema - se actualizan dinámicamente */
+  --theme-primary: #0d9488;
+  --theme-primary-hover: #0f766e;
+  --theme-primary-light: #ccfbf1;
+  --theme-accent: #f97316;
+  --theme-accent-hover: #ea580c;
+  --theme-accent-light: #ffedd5;
+  --theme-gradient: linear-gradient(135deg, #0d9488, #14b8a6);
+}
+
 @layer base {
   * {
     box-sizing: border-box;

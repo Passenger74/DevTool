@@ -12,6 +12,7 @@ interface AppState {
   selectedSpace: string | null;
   selectedBoard: string | null;
   sidebarOpen: boolean;
+  selectedTasks: string[];
   setCurrentView: (view: ViewMode) => void;
   setSelectedSpace: (space: string | null) => void;
   setSelectedBoard: (board: string | null) => void;
@@ -20,6 +21,11 @@ interface AppState {
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, status: Task['status']) => void;
+  toggleTaskSelection: (id: string) => void;
+  selectAllTasks: () => void;
+  clearTaskSelection: () => void;
+  deleteSelectedTasks: () => void;
+  updateSelectedTasksStatus: (status: Task['status']) => void;
   addTeam: (team: Team) => void;
   updateTeam: (id: string, updates: Partial<Team>) => void;
   deleteTeam: (id: string) => void;
@@ -291,6 +297,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   // Tasks
   const addTask = (task: Task) => setTasks(prev => [task, ...prev]);
@@ -299,6 +306,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteTask = (id: string) => setTasks(prev => prev.filter(t => t.id !== id));
   const moveTask = (id: string, status: Task['status']) =>
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+
+  // Bulk task operations
+  const toggleTaskSelection = (id: string) => {
+    setSelectedTasks(prev => 
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+    );
+  };
+  const selectAllTasks = () => setSelectedTasks(tasks.map(t => t.id));
+  const clearTaskSelection = () => setSelectedTasks([]);
+  const deleteSelectedTasks = () => {
+    setTasks(prev => prev.filter(t => !selectedTasks.includes(t.id)));
+    setSelectedTasks([]);
+  };
+  const updateSelectedTasksStatus = (status: Task['status']) => {
+    setTasks(prev => prev.map(t => 
+      selectedTasks.includes(t.id) ? { ...t, status } : t
+    ));
+    setSelectedTasks([]);
+  };
 
   // Teams
   const addTeam = (team: Team) => setTeams(prev => [...prev, team]);
@@ -415,6 +441,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       selectedSpace,
       selectedBoard,
       sidebarOpen,
+      selectedTasks,
       setCurrentView,
       setSelectedSpace,
       setSelectedBoard,
@@ -423,6 +450,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateTask,
       deleteTask,
       moveTask,
+      toggleTaskSelection,
+      selectAllTasks,
+      clearTaskSelection,
+      deleteSelectedTasks,
+      updateSelectedTasksStatus,
       addTeam,
       updateTeam,
       deleteTeam,

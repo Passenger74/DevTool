@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppProvider, useApp } from './store';
 import { AuthProvider, useAuth } from './auth';
+import { ThemeProvider } from './theme';
 import { Task } from './types';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -106,10 +107,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

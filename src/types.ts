@@ -36,8 +36,32 @@ export interface User {
   email: string;
   avatar: string;
   role: UserRole;
-  provider: 'google' | 'email';
+  provider: 'google' | 'email' | 'credentials';
   googleId?: string;
+  bio?: string;
+  phone?: string;
+  location?: string;
+  createdAt: string;
+}
+
+export interface UserCredentials {
+  email: string;
+  password: string;
+}
+
+export type ThemeName = 'classic' | 'ocean' | 'forest' | 'sunset' | 'mono' | 'lavender';
+
+export interface Theme {
+  name: ThemeName;
+  label: string;
+  primary: string;
+  primaryHover: string;
+  primaryLight: string;
+  accent: string;
+  accentHover: string;
+  accentLight: string;
+  gradient: string;
+  emoji: string;
 }
 
 export interface Team {
