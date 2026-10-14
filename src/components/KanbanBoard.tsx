@@ -2,6 +2,7 @@ import { DragEvent } from 'react';
 import { useApp } from '../store';
 import { Task, Status } from '../types';
 import { Plus, GripVertical } from 'lucide-react';
+import { formatShortDate, getInitials } from '../utils';
 
 interface KanbanBoardProps {
   onEditTask: (task: Task) => void;
@@ -98,13 +99,13 @@ export default function KanbanBoard({ onEditTask }: KanbanBoardProps) {
                             ))}
                           </div>
                           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-orange-400 flex items-center justify-center text-white text-[9px] font-bold" title={task.assignee}>
-                            {task.assignee.split(' ').map(n => n[0]).join('')}
+                            {getInitials(task.assignee)}
                           </div>
                         </div>
 
                         {task.dueDate && (
                           <p className="text-[10px] text-gray-400 mt-2">
-                            📅 {new Date(task.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                            📅 {formatShortDate(task.dueDate)}
                           </p>
                         )}
                       </div>

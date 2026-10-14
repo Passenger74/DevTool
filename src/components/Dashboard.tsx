@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
+import { priorityLabels } from '../utils';
 
 export default function Dashboard() {
   const { tasks, teams, boards, calendarConnection } = useApp();
@@ -22,7 +23,7 @@ export default function Dashboard() {
       label: 'Total Tareas',
       value: totalTasks,
       icon: <TrendingUp size={20} />,
-      color: 'from-teal-400 to-teal-500',
+      color: 'text-teal-600',
       bgColor: 'bg-teal-50',
       change: '+12%',
       up: true,
@@ -31,7 +32,7 @@ export default function Dashboard() {
       label: 'Completadas',
       value: completedTasks,
       icon: <CheckCircle2 size={20} />,
-      color: 'from-green-400 to-green-500',
+      color: 'text-green-600',
       bgColor: 'bg-green-50',
       change: '+8%',
       up: true,
@@ -40,7 +41,7 @@ export default function Dashboard() {
       label: 'En Progreso',
       value: inProgressTasks,
       icon: <Clock size={20} />,
-      color: 'from-orange-400 to-orange-500',
+      color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       change: '-3%',
       up: false,
@@ -49,7 +50,7 @@ export default function Dashboard() {
       label: 'Urgentes',
       value: urgentTasks,
       icon: <AlertTriangle size={20} />,
-      color: 'from-red-400 to-red-500',
+      color: 'text-red-600',
       bgColor: 'bg-red-50',
       change: '+2',
       up: true,
@@ -90,7 +91,7 @@ export default function Dashboard() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <div className={`bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`}>
+                <div className={stat.color}>
                   {stat.icon}
                 </div>
               </div>
@@ -184,7 +185,7 @@ export default function Dashboard() {
                   <p className="text-xs text-gray-400 mt-0.5">{task.assignee}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${priorityColors[task.priority]}`}>
-                  {task.priority}
+                  {priorityLabels[task.priority]}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium hidden sm:inline ${statusColors[task.status]}`}>
                   {statusLabels[task.status]}
@@ -200,8 +201,8 @@ export default function Dashboard() {
         <h3 className="text-sm font-semibold text-gray-800 mb-4">Actividad del Equipo</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { name: 'María García', tasks: 3, avatar: 'MG', color: 'from-teal-400 to-teal-500' },
-            { name: 'Carlos López', tasks: 4, avatar: 'CL', color: 'from-orange-400 to-orange-500' },
+            { name: 'María García', tasks: 3, avatar: 'MG', color: 'text-teal-600' },
+            { name: 'Carlos López', tasks: 4, avatar: 'CL', color: 'text-orange-600' },
             { name: 'Ana Martínez', tasks: 3, avatar: 'AM', color: 'from-purple-400 to-purple-500' },
             { name: 'Pedro Sánchez', tasks: 2, avatar: 'PS', color: 'from-cyan-400 to-cyan-500' },
           ].map((member, i) => (
