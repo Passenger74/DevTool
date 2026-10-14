@@ -53,7 +53,7 @@ function AppContent() {
 
   const handleSaveTask = (task: Task) => {
     if (editingTask) {
-      updateTask(task.id, task);
+      updateTask(task.id, { ...task });
     } else {
       addTask(task);
     }
