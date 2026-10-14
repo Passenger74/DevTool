@@ -11,6 +11,8 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
+  deleteUser: () => Promise<{ success: boolean; error?: string }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -160,6 +162,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Eliminar cuenta del usuario
+  const deleteUser = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user) {
+      return { success: false, error: 'No hay usuario autenticado' };
+    }
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Eliminar del store de usuarios
+      const users = getUsersStore();
+      const filteredUsers = users.filter(u => u.id !== user.id);
+      saveUsersStore(filteredUsers);
+      
+      // Cerrar sesión y limpiar datos
+      setUser(null);
+      localStorage.removeItem('taskflow_user');
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al eliminar la cuenta' };
+    }
+  };
+
+  // Cambiar contraseña
+  const changePassword = async (
+    currentPassword: string, 
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!user) {
+      return { success: false, error: 'No hay usuario autenticado' };
+    }
+
+    if (user.provider !== 'credentials') {
+      return { success: false, error: 'Solo se puede cambiar la contraseña de cuentas locales' };
+    }
+
+    if (newPassword.length < 6) {
+      return { success: false, error: 'La nueva contraseña debe tener al menos 6 caracteres' };
+    }
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const users = getUsersStore();
+      const userIdx = users.findIndex(u => u.id === user.id);
+      
+      if (userIdx === -1) {
+        return { success: false, error: 'Usuario no encontrado' };
+      }
+
+      // Verificar contraseña actual
+      if (users[userIdx].password !== currentPassword) {
+        return { success: false, error: 'La contraseña actual es incorrecta' };
+      }
+
+      // Actualizar contraseña
+      users[userIdx].password = newPassword;
+      saveUsersStore(users);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al cambiar la contraseña' };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -170,6 +238,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       updateUser,
+      deleteUser,
+      changePassword,
     }}>
       {children}
     </AuthContext.Provider>

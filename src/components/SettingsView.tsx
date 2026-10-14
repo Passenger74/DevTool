@@ -18,10 +18,16 @@ import {
   Phone,
   FileText,
   Check,
+  AlertTriangle,
+  X,
+  Eye,
+  EyeOff,
+  Trash2,
+  Key,
 } from 'lucide-react';
 
 export default function SettingsView() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, deleteUser, changePassword } = useAuth();
   const { calendarConnection } = useApp();
   const { theme, themeName, setTheme, themes } = useTheme();
 
@@ -33,6 +39,24 @@ export default function SettingsView() {
   const [location, setLocation] = useState(user?.location || '');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+
+  // Modals state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Password form state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Delete confirmation state
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Calcular avatar dinámicamente basado en el nombre editado
   const currentAvatar = useMemo(() => {
@@ -61,7 +85,7 @@ export default function SettingsView() {
       setPhone(user.phone || '');
       setLocation(user.location || '');
     }
-  }, [user?.id]); // Solo cuando cambia el ID de usuario
+  }, [user?.id]);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +138,69 @@ export default function SettingsView() {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    // Validaciones
+    if (!currentPassword) {
+      setPasswordError('Ingresa tu contraseña actual');
+      return;
+    }
+
+    if (!newPassword) {
+      setPasswordError('Ingresa la nueva contraseña');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setPasswordError('La nueva contraseña debe ser diferente a la actual');
+      return;
+    }
+
+    setPasswordLoading(true);
+    const result = await changePassword(currentPassword, newPassword);
+    setPasswordLoading(false);
+
+    if (result.success) {
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      alert('Contraseña cambiada exitosamente');
+    } else {
+      setPasswordError(result.error || 'Error al cambiar la contraseña');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+
+    if (deleteConfirmation !== 'ELIMINAR') {
+      setDeleteError('Debes escribir "ELIMINAR" para confirmar');
+      return;
+    }
+
+    setDeleteLoading(true);
+    const result = await deleteUser();
+    setDeleteLoading(false);
+
+    if (!result.success) {
+      setDeleteError(result.error || 'Error al eliminar la cuenta');
+    }
+    // Si es exitoso, el usuario será redirigido automáticamente al login
   };
 
   return (
@@ -170,9 +257,7 @@ export default function SettingsView() {
           {/* Mensaje de error */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
+              <XCircle size={16} className="flex-shrink-0" />
               {error}
             </div>
           )}
@@ -205,9 +290,7 @@ export default function SettingsView() {
               />
               {email !== user?.email && (
                 <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
+                  <AlertTriangle size={12} />
                   Cambiar el email requerirá verificar la nueva dirección
                 </p>
               )}
@@ -486,6 +569,7 @@ export default function SettingsView() {
               </p>
             </div>
             <button 
+              onClick={() => user?.provider === 'credentials' && setShowPasswordModal(true)}
               className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
                 user?.provider !== 'credentials' 
                   ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' 
@@ -535,19 +619,236 @@ export default function SettingsView() {
 
       {/* ========== DANGER ZONE ========== */}
       <div className="bg-white rounded-xl border border-red-200 p-6">
-        <h3 className="font-semibold text-red-700 mb-4">Zona de peligro</h3>
+        <h3 className="font-semibold text-red-700 mb-4 flex items-center gap-2">
+          <AlertTriangle size={20} />
+          Zona de peligro
+        </h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 rounded-lg bg-red-50">
             <div>
               <p className="text-sm font-medium text-gray-700">Eliminar cuenta</p>
-              <p className="text-xs text-gray-500">Esta acción es irreversible</p>
+              <p className="text-xs text-gray-500">Esta acción es irreversible y eliminará todos tus datos</p>
             </div>
-            <button className="text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition-colors">
+            <button 
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center gap-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Trash2 size={14} />
               Eliminar
             </button>
           </div>
         </div>
       </div>
+
+      {/* ========== CHANGE PASSWORD MODAL ========== */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Key size={20} style={{ color: theme.primary }} />
+                Cambiar contraseña
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setPasswordError('');
+                }}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              {passwordError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
+                  <XCircle size={16} className="flex-shrink-0" />
+                  {passwordError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña actual</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 pr-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                    style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 pr-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                    style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar nueva contraseña</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                  style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordError('');
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm transition-all disabled:opacity-50"
+                  style={{ background: theme.gradient }}
+                >
+                  {passwordLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Cambiando...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Cambiar contraseña
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========== DELETE ACCOUNT MODAL ========== */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-red-700 flex items-center gap-2">
+                <AlertTriangle size={20} />
+                Eliminar cuenta
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmation('');
+                  setDeleteError('');
+                }}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-medium mb-2">⚠️ Esta acción es irreversible</p>
+                <ul className="text-xs text-red-600 space-y-1">
+                  <li>• Se eliminarán todos tus datos personales</li>
+                  <li>• Se eliminarán todas tus tareas y proyectos</li>
+                  <li>• Se eliminarán todos tus equipos y tableros</li>
+                  <li>• No podrás recuperar tu cuenta</li>
+                </ul>
+              </div>
+
+              {deleteError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
+                  <XCircle size={16} className="flex-shrink-0" />
+                  {deleteError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Para confirmar, escribe <span className="font-bold text-red-600">ELIMINAR</span>
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={e => setDeleteConfirmation(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                  placeholder="ELIMINAR"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmation('');
+                    setDeleteError('');
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading || deleteConfirmation !== 'ELIMINAR'}
+                  className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      Eliminar mi cuenta
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
