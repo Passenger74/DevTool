@@ -18,6 +18,28 @@ import {
   Search,
 } from 'lucide-react';
 
+interface CreateTeamData {
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
+interface TeamDetailModalProps {
+  team: Team;
+  onClose: () => void;
+  onAddMember: () => void;
+  onRemoveMember: (id: string) => void;
+  onChangeRole: (id: string, role: UserRole) => void;
+  onDelete: () => void;
+}
+
+interface AddMemberModalProps {
+  team: Team;
+  onClose: () => void;
+  onAdd: (email: string, role: UserRole) => void;
+}
+
 const teamIcons = ['💼', '🚀', '🎯', '💡', '🔥', '⭐', '🎨', '💻', '📊', '🌟'];
 const teamColors = ['#0D9488', '#F97316', '#8B5CF6', '#06B6D4', '#EC4899', '#10B981', '#F59E0B', '#EF4444'];
 
@@ -40,7 +62,7 @@ export default function TeamsManager() {
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateTeam = (data: { name: string; description: string; icon: string; color: string }) => {
+  const handleCreateTeam = (data: CreateTeamData) => {
     if (!user) return;
     const newTeam: Team = {
       id: uuidv4(),
@@ -221,7 +243,7 @@ export default function TeamsManager() {
 // ========== Create Team Modal ==========
 function CreateTeamModal({ onClose, onCreate }: {
   onClose: () => void;
-  onCreate: (data: { name: string; description: string; icon: string; color: string }) => void;
+  onCreate: (data: CreateTeamData) => void;
 }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -326,14 +348,7 @@ function CreateTeamModal({ onClose, onCreate }: {
 }
 
 // ========== Team Detail Modal ==========
-function TeamDetailModal({ team, onClose, onAddMember, onRemoveMember, onChangeRole, onDelete }: {
-  team: Team;
-  onClose: () => void;
-  onAddMember: () => void;
-  onRemoveMember: (id: string) => void;
-  onChangeRole: (id: string, role: UserRole) => void;
-  onDelete: () => void;
-}) {
+function TeamDetailModal({ team, onClose, onAddMember, onRemoveMember, onChangeRole, onDelete }: TeamDetailModalProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -438,11 +453,7 @@ function TeamDetailModal({ team, onClose, onAddMember, onRemoveMember, onChangeR
 }
 
 // ========== Add Member Modal ==========
-function AddMemberModal({ team, onClose, onAdd }: {
-  team: Team;
-  onClose: () => void;
-  onAdd: (email: string, role: UserRole) => void;
-}) {
+function AddMemberModal({ team, onClose, onAdd }: AddMemberModalProps) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('member');
 
