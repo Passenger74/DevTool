@@ -1,52 +1,108 @@
 # ==============================================================================
-# TaskFlow - Configuración Apache para SPA (Single Page Application)
+# TaskFlow v2.0 - Configuración Apache para SPA
+# Compatible con Apache 2.4+ (cPanel moderno)
 # ==============================================================================
 
-# Proteger archivos sensibles
-<FilesMatch "\.(env|git|gitignore|log|sh|ps1|md)$">
-  Order allow,deny
-  Deny from all
+# ------------------------------------------------------------------------------
+# 1. PROTECCIÓN DE ARCHIVOS SENSIBLES
+# ------------------------------------------------------------------------------
+<FilesMatch "\.(env|git|gitignore|log|sh|ps1|md|json|lock|yml|yaml)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
 </FilesMatch>
 
-# ==============================================================================
-# REWRITE RULES - SPA Routing
-# ==============================================================================
+# Bloquear acceso a package.json y archivos de configuración
+<Files "package.json">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</Files>
+
+# ------------------------------------------------------------------------------
+# 2. REWRITE RULES - SPA Routing (CORREGIDO)
+# ------------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  
-  # Redirigir HTTP a HTTPS (descomentar si tienes SSL)
-  # RewriteCond %{HTTPS} off
+
+  # [OPCIONAL] Forzar HTTPS - descomentar si tienes SSL activo
+  # RewriteCond %{HTTPS} !=on
   # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-  
-  # Redirigir www a non-www (descomentar si es necesario)
-  # RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+
+  # [OPCIONAL] Forzar non-www - descomentar si es necesario
+  # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   # RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
-  
-  # No redirigir archivos que existen
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-  
+
+  # Servir archivos gzip/brotli pre-comprimidos si existen
+  RewriteCond %{HTTP:Accept-Encoding} gzip
+  RewriteCond %{REQUEST_FILENAME}\.gz -f
+  RewriteRule ^(.*)$ $1.gz [L]
+
+  # Servir archivos CSS/JS/HTML con extensión correcta
+  RewriteCond %{REQUEST_URI} "!\.(css|js|html|json|xml|svg|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot)$"
+
+  # CORRECCIÓN: Evitar loop infinito verificando que no sea index.html
+  RewriteCond %{REQUEST_URI} !^/index\.html$
+  RewriteCond %{REQUEST_URI} !^/assets/
+
+  # Si el archivo o directorio existe, servirlo directamente
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
   # Redirigir todo lo demás a index.html (SPA)
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# ==============================================================================
-# CACHE CONTROL - Optimización de rendimiento
-# ==============================================================================
+# ------------------------------------------------------------------------------
+# 3. MIME TYPES - Asegurar tipos correctos
+# ------------------------------------------------------------------------------
+<IfModule mod_mime.c>
+  # JavaScript
+  AddType application/javascript js mjs
+  AddType text/javascript js mjs
+
+  # CSS
+  AddType text/css css
+
+  # JSON
+  AddType application/json json map
+
+  # Web Fonts
+  AddType font/woff2 woff2
+  AddType font/woff woff
+  AddType font/ttf ttf
+  AddType font/otf otf
+  AddType application/vnd.ms-fontobject eot
+
+  # Imágenes
+  AddType image/svg+xml svg svgz
+  AddType image/webp webp
+  AddType image/x-icon ico
+
+  # Manifest
+  AddType application/manifest+json webmanifest
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 4. CACHE CONTROL - Optimizado para Vite (hash en filenames)
+# ------------------------------------------------------------------------------
 <IfModule mod_expires.c>
   ExpiresActive On
-  
-  # HTML - Cache corto
-  ExpiresByType text/html "access plus 1 hour"
-  
-  # CSS y JavaScript - Cache largo (Vite usa hashes)
+
+  # HTML - No cachear (siempre verificar actualización)
+  ExpiresByType text/html "access plus 0 seconds"
+
+  # CSS y JS - Cache largo (Vite genera hashes únicos)
   ExpiresByType text/css "access plus 1 year"
   ExpiresByType application/javascript "access plus 1 year"
   ExpiresByType text/javascript "access plus 1 year"
-  
-  # Imágenes - Cache largo
+
+  # Imágenes
   ExpiresByType image/png "access plus 1 year"
   ExpiresByType image/jpg "access plus 1 year"
   ExpiresByType image/jpeg "access plus 1 year"
@@ -54,24 +110,51 @@
   ExpiresByType image/svg+xml "access plus 1 year"
   ExpiresByType image/webp "access plus 1 year"
   ExpiresByType image/x-icon "access plus 1 year"
-  
-  # Fuentes - Cache largo
+
+  # Fuentes
   ExpiresByType font/woff2 "access plus 1 year"
   ExpiresByType font/woff "access plus 1 year"
   ExpiresByType font/ttf "access plus 1 year"
   ExpiresByType font/otf "access plus 1 year"
   ExpiresByType application/font-woff2 "access plus 1 year"
-  
-  # Otros archivos estáticos
+  ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
+
+  # Otros
   ExpiresByType application/json "access plus 0 seconds"
   ExpiresByType application/xml "access plus 0 seconds"
+  ExpiresByType text/xml "access plus 0 seconds"
 </IfModule>
 
-# ==============================================================================
-# COMPRESSION - Reducir tamaño de transferencia
-# ==============================================================================
+# Cache-Control headers específicos (más granular que mod_expires)
+<IfModule mod_headers.c>
+  # Assets con hash (Vite) - Cache immutable
+  <FilesMatch "\.(js|css|mjs)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # HTML - No cachear, siempre revalidar
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Imágenes y fuentes - Cache largo
+  <FilesMatch "\.(png|jpg|jpeg|gif|svg|webp|ico|woff2|woff|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # JSON y datos - No cachear
+  <FilesMatch "\.(json|xml)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 5. COMPRESSION - GZIP/Brotli
+# ------------------------------------------------------------------------------
 <IfModule mod_deflate.c>
-  # Comprimir texto y código
+  # Comprimir tipos de texto y código
   AddOutputFilterByType DEFLATE text/html
   AddOutputFilterByType DEFLATE text/css
   AddOutputFilterByType DEFLATE text/javascript
@@ -83,62 +166,79 @@
   AddOutputFilterByType DEFLATE image/svg+xml
   AddOutputFilterByType DEFLATE font/truetype
   AddOutputFilterByType DEFLATE font/opentype
+  AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+  AddOutputFilterByType DEFLATE application/javascript
+
+  # Excluir archivos ya comprimidos
+  SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|zip|gz|br|woff2?)$ no-gzip dont-vary
 </IfModule>
 
-# ==============================================================================
-# SECURITY HEADERS - Protección del sitio
-# ==============================================================================
+# ------------------------------------------------------------------------------
+# 6. SECURITY HEADERS
+# ------------------------------------------------------------------------------
 <IfModule mod_headers.c>
   # Prevenir MIME type sniffing
-  Header set X-Content-Type-Options "nosniff"
-  
+  Header always set X-Content-Type-Options "nosniff"
+
   # Protección contra clickjacking
-  Header set X-Frame-Options "SAMEORIGIN"
-  
-  # Protección XSS
-  Header set X-XSS-Protection "1; mode=block"
-  
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # Protección XSS (legacy, pero aún útil)
+  Header always set X-XSS-Protection "1; mode=block"
+
   # Referrer Policy
-  Header set Referrer-Policy "strict-origin-when-cross-origin"
-  
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
   # Permissions Policy (reemplaza Feature-Policy)
-  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-  
-  # Content Security Policy (ajustar según necesidades)
-  # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';"
-</IfModule>
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
 
-# ==============================================================================
-# PERFORMANCE - Optimizaciones adicionales
-# ==============================================================================
-<IfModule mod_headers.c>
-  # Cache para assets con hash (Vite)
-  <FilesMatch "\.(js|css)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
-  </FilesMatch>
-  
-  # No cachear HTML
-  <FilesMatch "\.(html)$">
-    Header set Cache-Control "public, max-age=0, must-revalidate"
+  # Eliminar headers que revelan información del servidor
+  Header always unset X-Powered-By
+  Header always unset Server
+  Header always unset X-AspNet-Version
+  Header always unset X-AspNetMvc-Version
+
+  # CORS para fuentes (necesario para Google Fonts y fuentes locales)
+  <FilesMatch "\.(woff2|woff|ttf|eot|otf)$">
+    Header set Access-Control-Allow-Origin "*"
   </FilesMatch>
 </IfModule>
 
-# ==============================================================================
-# ERROR PAGES - Páginas de error personalizadas
-# ==============================================================================
-ErrorDocument 404 /index.html
-ErrorDocument 403 /index.html
-ErrorDocument 500 /index.html
+# ------------------------------------------------------------------------------
+# 7. ERROR PAGES - Manejo correcto para SPA
+# ------------------------------------------------------------------------------
+# CORRECCIÓN: Usar solo 404 → index.html para SPA routing
+# NO redirigir 403 ni 500 a index.html (oculta errores reales)
+<IfModule mod_rewrite.c>
+  ErrorDocument 404 /index.html
+</IfModule>
 
-# ==============================================================================
-# MISCELLANEOUS - Configuraciones adicionales
-# ==============================================================================
+# ------------------------------------------------------------------------------
+# 8. MISCELLANEOUS
+# ------------------------------------------------------------------------------
 
-# Deshabilitar listado de directorios
-Options -Indexes
-
-# Establecer charset por defecto
+# Charset por defecto
 AddDefaultCharset UTF-8
 
-# Habilitar ETags
-FileETag MTime Size
+# ETags optimizados
+<IfModule mod_headers.c>
+  Header unset ETag
+</IfModule>
+FileETag None
+
+# Deshabilitar listado de directorios (con protección)
+<IfModule mod_autoindex.c>
+  Options -Indexes
+</IfModule>
+
+# Limitar tamaño de uploads (ajustar según necesidades)
+LimitRequestBody 10485760
+
+# Timeout de conexión
+<IfModule mod_reqtimeout.c>
+  RequestReadTimeout header=20-40,MinRate=500 body=20,MinRate=500
+</IfModule>
+
+# ==============================================================================
+# FIN DE CONFIGURACIÓN
+# ==============================================================================
