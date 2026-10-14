@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth';
 import { useApp } from '../store';
-import { useTheme, THEMES } from '../theme';
+import { useTheme } from '../theme';
 import { ThemeName } from '../types';
 import {
   User,
@@ -33,6 +33,35 @@ export default function SettingsView() {
   const [location, setLocation] = useState(user?.location || '');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+
+  // Calcular avatar dinámicamente basado en el nombre editado
+  const currentAvatar = useMemo(() => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  }, [name]);
+
+  // Estado de notificaciones
+  const [notifications, setNotifications] = useState({
+    email: true,
+    reminders: true,
+    mentions: true,
+    assignments: false,
+  });
+
+  // Sincronizar estados del formulario cuando el usuario cambia
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setBio(user.bio || '');
+      setPhone(user.phone || '');
+      setLocation(user.location || '');
+    }
+  }, [user?.id]); // Solo cuando cambia el ID de usuario
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,22 +139,22 @@ export default function SettingsView() {
         <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="relative">
             <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl"
+              className="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl transition-all"
               style={{ background: theme.gradient }}
             >
-              {user?.avatar}
+              {currentAvatar || user?.avatar}
             </div>
             <button 
-              className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md"
+              className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform"
               style={{ background: theme.gradient }}
               title="Cambiar avatar"
             >
               <Camera size={14} />
             </button>
           </div>
-          <div className="flex-1">
-            <p className="font-semibold text-gray-800">{user?.name}</p>
-            <p className="text-sm text-gray-500">{user?.email}</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-800 truncate">{name || user?.name}</p>
+            <p className="text-sm text-gray-500 truncate">{email || user?.email}</p>
             <span 
               className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full mt-1"
               style={{ backgroundColor: theme.primaryLight, color: theme.primary }}
@@ -404,27 +433,33 @@ export default function SettingsView() {
 
         <div className="space-y-3">
           {[
-            { label: 'Notificaciones por email', desc: 'Recibe actualizaciones por email', defaultChecked: true },
-            { label: 'Recordatorios de tareas', desc: 'Te avisamos antes de la fecha límite', defaultChecked: true },
-            { label: 'Menciones y comentarios', desc: 'Cuando alguien te menciona', defaultChecked: true },
-            { label: 'Nuevas asignaciones', desc: 'Cuando te asignan una tarea', defaultChecked: false },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between py-2">
+            { key: 'email' as const, label: 'Notificaciones por email', desc: 'Recibe actualizaciones por email' },
+            { key: 'reminders' as const, label: 'Recordatorios de tareas', desc: 'Te avisamos antes de la fecha límite' },
+            { key: 'mentions' as const, label: 'Menciones y comentarios', desc: 'Cuando alguien te menciona' },
+            { key: 'assignments' as const, label: 'Nuevas asignaciones', desc: 'Cuando te asignan una tarea' },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between py-2">
               <div>
                 <p className="text-sm font-medium text-gray-700">{item.label}</p>
                 <p className="text-xs text-gray-500">{item.desc}</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  defaultChecked={item.defaultChecked} 
-                  className="sr-only peer" 
+              <button
+                type="button"
+                role="switch"
+                aria-checked={notifications[item.key]}
+                onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2"
+                style={{
+                  backgroundColor: notifications[item.key] ? theme.primary : '#d1d5db',
+                  '--tw-ring-color': theme.primaryLight,
+                } as React.CSSProperties}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    notifications[item.key] ? 'translate-x-5' : 'translate-x-0'
+                  }`}
                 />
-                <div 
-                  className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-current"
-                  style={{ '--tw-ring-color': theme.primaryLight } as React.CSSProperties}
-                ></div>
-              </label>
+              </button>
             </div>
           ))}
         </div>
@@ -451,11 +486,15 @@ export default function SettingsView() {
               </p>
             </div>
             <button 
-              className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-              style={{ 
+              className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                user?.provider !== 'credentials' 
+                  ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' 
+                  : 'hover:opacity-80'
+              }`}
+              style={user?.provider === 'credentials' ? { 
                 color: theme.primary,
                 backgroundColor: theme.primaryLight,
-              }}
+              } : {}}
               disabled={user?.provider !== 'credentials'}
             >
               {user?.provider === 'credentials' ? 'Cambiar' : 'N/A'}
