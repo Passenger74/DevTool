@@ -30,14 +30,31 @@ export default function TaskList({ onEditTask }: TaskListProps) {
   const { theme } = useTheme();
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
   const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [bulkAction, setBulkAction] = useState<'delete' | 'status' | null>(null);
+
+  // Extraer todas las etiquetas únicas de las tareas
+  const allTags = Array.from(new Set(tasks.flatMap(task => task.tags))).sort();
 
   const filteredTasks = tasks.filter(task => {
     if (filterStatus !== 'all' && task.status !== filterStatus) return false;
     if (filterPriority !== 'all' && task.priority !== filterPriority) return false;
+    if (selectedTags.length > 0 && !selectedTags.some(tag => task.tags.includes(tag))) return false;
     return true;
   });
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const clearTagFilters = () => {
+    setSelectedTags([]);
+  };
 
   const allFilteredSelected = filteredTasks.length > 0 && 
     filteredTasks.every(t => selectedTasks.includes(t.id));
@@ -120,6 +137,43 @@ export default function TaskList({ onEditTask }: TaskListProps) {
           {filteredTasks.length} tareas
         </span>
       </div>
+
+      {/* Tag Filters */}
+      {allTags.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm font-medium text-gray-700">Etiquetas:</span>
+            {selectedTags.length > 0 && (
+              <button
+                onClick={clearTagFilters}
+                className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              >
+                <X size={12} />
+                Limpiar
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map(tag => {
+              const isSelected = selectedTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                    isSelected
+                      ? 'text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  style={isSelected ? { backgroundColor: theme.primary } : {}}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Bulk Actions Bar */}
       {selectedTasks.length > 0 && (
