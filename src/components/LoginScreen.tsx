@@ -1,10 +1,10 @@
-import * as React from 'react';
+import { useState, useCallback, type FormEvent, type CSSProperties } from 'react';
 import { useAuth } from '../auth';
 import { useTheme } from '../theme';
 import { Zap, Shield, Users, Calendar, CheckCircle2, Mail, Lock, User as UserIcon, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
 
 // Tipo para estilos con variables CSS personalizadas
-interface CustomCSSProperties extends React.CSSProperties {
+interface CustomCSSProperties extends CSSProperties {
   '--tw-ring-color'?: string;
 }
 
@@ -34,16 +34,16 @@ const getPasswordStrength = (password: string): { score: number; label: string; 
 export default function LoginScreen() {
   const { loginWithGoogle, loginWithCredentials, register, isLoading } = useAuth();
   const { theme } = useTheme();
-  const [view, setView] = React.useState<AuthView>('main');
+  const [view, setView] = useState<AuthView>('main');
   
   // Form states
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [name, setName] = React.useState('');
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [error, setError] = React.useState('');
-  const [success, setSuccess] = React.useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const features = [
     { icon: <Users size={20} />, title: 'Equipos colaborativos', desc: 'Gestiona equipos y roles' },
@@ -52,7 +52,7 @@ export default function LoginScreen() {
     { icon: <Shield size={20} />, title: 'Seguro', desc: 'Múltiples opciones de login' },
   ];
 
-  const handleCredentialsLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCredentialsLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     
@@ -75,7 +75,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -117,7 +117,7 @@ export default function LoginScreen() {
     }
   };
 
-  const goBack = React.useCallback(() => {
+  const goBack = useCallback(() => {
     setView('main');
     setError('');
     setSuccess('');
