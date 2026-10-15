@@ -13,6 +13,8 @@ import TaskModal from './components/TaskModal';
 import LoginScreen from './components/LoginScreen';
 import TeamsManager from './components/TeamsManager';
 import BoardsManager from './components/BoardsManager';
+import TagManager from './components/TagManager';
+import SpaceManager from './components/SpaceManager';
 import SettingsView from './components/SettingsView';
 
 function AppContent() {
@@ -78,6 +80,10 @@ function AppContent() {
         return <TeamsManager />;
       case 'boards':
         return <BoardsManager />;
+      case 'tags':
+        return <TagManager />;
+      case 'spaces':
+        return <SpaceManager />;
       case 'settings':
         return <SettingsView />;
       default:

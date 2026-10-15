@@ -13,6 +13,8 @@ import {
   X,
   Zap,
   LogOut,
+  Tag,
+  Folder,
 } from 'lucide-react';
 
 const navItems: { id: ViewMode; label: string; icon: ReactNode; section?: string }[] = [
@@ -22,6 +24,8 @@ const navItems: { id: ViewMode; label: string; icon: ReactNode; section?: string
   { id: 'calendar', label: 'Calendario', icon: <Calendar size={20} /> },
   { id: 'teams', label: 'Equipos', icon: <Users size={20} />, section: 'Gestión' },
   { id: 'boards', label: 'Tableros', icon: <LayoutGrid size={20} /> },
+  { id: 'tags', label: 'Etiquetas', icon: <Tag size={20} /> },
+  { id: 'spaces', label: 'Espacios', icon: <Folder size={20} /> },
   { id: 'settings', label: 'Configuración', icon: <Settings size={20} /> },
 ];
 

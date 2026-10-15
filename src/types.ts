@@ -16,6 +16,21 @@ export interface Task {
   teamId?: string;
   syncedToCalendar?: boolean;
   calendarEventId?: string;
+  verified?: boolean;
+  fileLinks?: FileLink[];
+}
+
+export interface FileLink {
+  id: string;
+  name: string;
+  url: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
 }
 
 export interface Space {
@@ -24,9 +39,11 @@ export interface Space {
   icon: string;
   color: string;
   taskCount: number;
+  parentId?: string | null;
+  teamId?: string;
 }
 
-export type ViewMode = 'dashboard' | 'list' | 'board' | 'calendar' | 'teams' | 'boards' | 'settings';
+export type ViewMode = 'dashboard' | 'list' | 'board' | 'calendar' | 'teams' | 'boards' | 'settings' | 'tags' | 'spaces';
 
 // ========== NUEVOS TIPOS ==========
 

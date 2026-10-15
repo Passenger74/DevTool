@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { Task, Space, ViewMode, Team, Board, BoardColumn, GoogleCalendarConnection } from './types';
+import { Task, Space, ViewMode, Team, Board, BoardColumn, GoogleCalendarConnection, Tag, FileLink } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AppState {
@@ -7,6 +7,7 @@ interface AppState {
   spaces: Space[];
   teams: Team[];
   boards: Board[];
+  tags: Tag[];
   calendarConnection: GoogleCalendarConnection;
   currentView: ViewMode;
   selectedSpace: string | null;
@@ -26,6 +27,9 @@ interface AppState {
   clearTaskSelection: () => void;
   deleteSelectedTasks: () => void;
   updateSelectedTasksStatus: (status: Task['status']) => void;
+  verifyTask: (id: string) => void;
+  addFileLink: (taskId: string, link: FileLink) => void;
+  removeFileLink: (taskId: string, linkId: string) => void;
   addTeam: (team: Team) => void;
   updateTeam: (id: string, updates: Partial<Team>) => void;
   deleteTeam: (id: string) => void;
@@ -35,6 +39,12 @@ interface AppState {
   addBoardColumn: (boardId: string, column: BoardColumn) => void;
   updateBoardColumn: (boardId: string, columnId: string, updates: Partial<BoardColumn>) => void;
   deleteBoardColumn: (boardId: string, columnId: string) => void;
+  addTag: (tag: Tag) => void;
+  updateTag: (id: string, updates: Partial<Tag>) => void;
+  deleteTag: (id: string) => void;
+  addSpace: (space: Space) => void;
+  updateSpace: (id: string, updates: Partial<Space>) => void;
+  deleteSpace: (id: string) => void;
   connectGoogleCalendar: (email: string) => void;
   disconnectGoogleCalendar: () => void;
   syncTaskToCalendar: (taskId: string) => void;
@@ -43,10 +53,33 @@ interface AppState {
 }
 
 const defaultSpaces: Space[] = [
-  { id: '1', name: 'Marketing', icon: '📢', color: '#0D9488', taskCount: 5 },
-  { id: '2', name: 'Development', icon: '💻', color: '#F97316', taskCount: 8 },
-  { id: '3', name: 'Design', icon: '🎨', color: '#8B5CF6', taskCount: 4 },
-  { id: '4', name: 'Operations', icon: '⚙️', color: '#06B6D4', taskCount: 3 },
+  { id: '1', name: 'Marketing', icon: '📢', color: '#0D9488', taskCount: 5, parentId: null, teamId: 'team-1' },
+  { id: '2', name: 'Development', icon: '💻', color: '#F97316', taskCount: 8, parentId: null, teamId: 'team-2' },
+  { id: '3', name: 'Design', icon: '🎨', color: '#8B5CF6', taskCount: 4, parentId: null, teamId: 'team-3' },
+  { id: '4', name: 'Operations', icon: '⚙️', color: '#06B6D4', taskCount: 3, parentId: null },
+  { id: '5', name: 'Campañas Q1', icon: '📊', color: '#0D9488', taskCount: 2, parentId: '1', teamId: 'team-1' },
+  { id: '6', name: 'Redes Sociales', icon: '📱', color: '#0D9488', taskCount: 3, parentId: '1', teamId: 'team-1' },
+  { id: '7', name: 'Frontend', icon: '🎨', color: '#F97316', taskCount: 4, parentId: '2', teamId: 'team-2' },
+  { id: '8', name: 'Backend', icon: '⚙️', color: '#F97316', taskCount: 4, parentId: '2', teamId: 'team-2' },
+];
+
+const defaultTags: Tag[] = [
+  { id: 'tag-1', name: 'diseño', color: '#8B5CF6', createdAt: '2026-01-01' },
+  { id: 'tag-2', name: 'urgente', color: '#EF4444', createdAt: '2026-01-01' },
+  { id: 'tag-3', name: 'backend', color: '#F97316', createdAt: '2026-01-01' },
+  { id: 'tag-4', name: 'seguridad', color: '#DC2626', createdAt: '2026-01-01' },
+  { id: 'tag-5', name: 'contenido', color: '#06B6D4', createdAt: '2026-01-01' },
+  { id: 'tag-6', name: 'marketing', color: '#0D9488', createdAt: '2026-01-01' },
+  { id: 'tag-7', name: 'performance', color: '#F59E0B', createdAt: '2026-01-01' },
+  { id: 'tag-8', name: 'UI', color: '#EC4899', createdAt: '2026-01-01' },
+  { id: 'tag-9', name: 'devops', color: '#6366F1', createdAt: '2026-01-01' },
+  { id: 'tag-10', name: 'automatización', color: '#10B981', createdAt: '2026-01-01' },
+  { id: 'tag-11', name: 'email', color: '#14B8A6', createdAt: '2026-01-01' },
+  { id: 'tag-12', name: 'accesibilidad', color: '#8B5CF6', createdAt: '2026-01-01' },
+  { id: 'tag-13', name: 'QA', color: '#F59E0B', createdAt: '2026-01-01' },
+  { id: 'tag-14', name: 'pagos', color: '#EF4444', createdAt: '2026-01-01' },
+  { id: 'tag-15', name: 'documentación', color: '#6B7280', createdAt: '2026-01-01' },
+  { id: 'tag-16', name: 'API', color: '#F97316', createdAt: '2026-01-01' },
 ];
 
 const defaultTasks: Task[] = [
@@ -289,9 +322,10 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
-  const [spaces] = useState<Space[]>(defaultSpaces);
+  const [spaces, setSpaces] = useState<Space[]>(defaultSpaces);
   const [teams, setTeams] = useState<Team[]>(defaultTeams);
   const [boards, setBoards] = useState<Board[]>(defaultBoards);
+  const [tags, setTags] = useState<Tag[]>(defaultTags);
   const [calendarConnection, setCalendarConnection] = useState<GoogleCalendarConnection>(defaultCalendar);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
@@ -325,6 +359,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ));
     setSelectedTasks([]);
   };
+
+  // Task verification and file links
+  const verifyTask = (id: string) => {
+    setTasks(prev => prev.map(t => 
+      t.id === id ? { ...t, verified: !t.verified } : t
+    ));
+  };
+
+  const addFileLink = (taskId: string, link: FileLink) => {
+    setTasks(prev => prev.map(t => 
+      t.id === taskId 
+        ? { ...t, fileLinks: [...(t.fileLinks || []), link] }
+        : t
+    ));
+  };
+
+  const removeFileLink = (taskId: string, linkId: string) => {
+    setTasks(prev => prev.map(t => 
+      t.id === taskId 
+        ? { ...t, fileLinks: (t.fileLinks || []).filter(l => l.id !== linkId) }
+        : t
+    ));
+  };
+
+  // Tags
+  const addTag = (tag: Tag) => setTags(prev => [...prev, tag]);
+  const updateTag = (id: string, updates: Partial<Tag>) =>
+    setTags(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  const deleteTag = (id: string) => setTags(prev => prev.filter(t => t.id !== id));
+
+  // Spaces
+  const addSpace = (space: Space) => setSpaces(prev => [...prev, space]);
+  const updateSpace = (id: string, updates: Partial<Space>) =>
+    setSpaces(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  const deleteSpace = (id: string) => setSpaces(prev => prev.filter(s => s.id !== id));
 
   // Teams
   const addTeam = (team: Team) => setTeams(prev => [...prev, team]);
@@ -436,6 +505,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       spaces,
       teams,
       boards,
+      tags,
       calendarConnection,
       currentView,
       selectedSpace,
@@ -455,6 +525,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearTaskSelection,
       deleteSelectedTasks,
       updateSelectedTasksStatus,
+      verifyTask,
+      addFileLink,
+      removeFileLink,
       addTeam,
       updateTeam,
       deleteTeam,
@@ -464,6 +537,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addBoardColumn,
       updateBoardColumn,
       deleteBoardColumn,
+      addTag,
+      updateTag,
+      deleteTag,
+      addSpace,
+      updateSpace,
+      deleteSpace,
       connectGoogleCalendar,
       disconnectGoogleCalendar,
       syncTaskToCalendar,

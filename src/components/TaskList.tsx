@@ -15,6 +15,7 @@ import {
   Square,
   X,
   ListChecks,
+  Paperclip,
 } from 'lucide-react';
 
 interface TaskListProps {
@@ -23,7 +24,7 @@ interface TaskListProps {
 
 export default function TaskList({ onEditTask }: TaskListProps) {
   const { 
-    tasks, updateTask, deleteTask,
+    tasks, tags, updateTask, deleteTask,
     selectedTasks, toggleTaskSelection, selectAllTasks, 
     clearTaskSelection, deleteSelectedTasks, updateSelectedTasksStatus 
   } = useApp();
@@ -353,14 +354,38 @@ export default function TaskList({ onEditTask }: TaskListProps) {
                     </div>
                   </div>
 
-                  {/* Tags */}
+                  {/* Tags with colors */}
                   {task.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {task.tags.map(tag => (
-                        <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
-                          #{tag}
-                        </span>
-                      ))}
+                      {task.tags.map(tagName => {
+                        const tag = tags.find(t => t.name === tagName);
+                        const color = tag?.color || '#6B7280';
+                        return (
+                          <span
+                            key={tagName}
+                            className="text-[10px] px-2 py-0.5 rounded-full text-white font-medium"
+                            style={{ backgroundColor: color }}
+                          >
+                            #{tagName}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* File links */}
+                  {task.fileLinks && task.fileLinks.length > 0 && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                      <Paperclip size={12} />
+                      <span>{task.fileLinks.length} archivo{task.fileLinks.length > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+
+                  {/* Verified badge */}
+                  {task.verified && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-green-600 font-medium">
+                      <CheckCircle2 size={12} />
+                      <span>Verificado</span>
                     </div>
                   )}
                 </div>
