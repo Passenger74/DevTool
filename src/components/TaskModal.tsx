@@ -13,7 +13,7 @@ interface TaskModalProps {
 }
 
 export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: TaskModalProps) {
-  const { tags, verifyTask, addFileLink, removeFileLink } = useApp();
+  const { tags } = useApp();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
