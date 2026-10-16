@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Despliega automáticamente cuando hay push a la rama main
+  workflow_dispatch:  # Permite ejecutar manualmente desde GitHub
 
 jobs:
   deploy:
@@ -26,6 +27,19 @@ jobs:
       - name: 🔨 Build project
         run: npm run build
 
+      - name: 🧪 Verify build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Error: La carpeta dist no existe"
+            exit 1
+          fi
+          if [ -z "$(ls -A dist)" ]; then
+            echo "❌ Error: La carpeta dist está vacía"
+            exit 1
+          fi
+          echo "✅ Build verificado exitosamente"
+          ls -la dist/
+
       - name: 📤 Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -33,12 +47,37 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_PATH || '/public_html/' }}
-          local-dir: dist/
+          local-dir: ./dist/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
+            **/.env*
+            **/*.log
+          log-level: minimal
+          security: loose
 
       - name: ✅ Deployment complete
-        run: echo "🎉 Deploy successful! Visit your site."
+        if: success()
+        run: |
+          echo "🎉 ==========================================="
+          echo "   ¡Deploy successful!"
+          echo "🎉 ==========================================="
+          echo ""
+          echo "🌐 Visit your site"
+          echo ""
+
+      - name: ❌ Deployment failed
+        if: failure()
+        run: |
+          echo "❌ ==========================================="
+          echo "   Deployment failed!"
+          echo "❌ ==========================================="
+          echo ""
+          echo "🔍 Check:"
+          echo "   • FTP credentials in GitHub Secrets"
+          echo "   • FTP server is accessible"
+          echo "   • Write permissions on server"
+          echo ""
+          exit 1

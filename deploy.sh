@@ -13,14 +13,14 @@
 FTP_HOST="ftp.tudominio.com"          # Host FTP de tu cPanel
 FTP_USER="tu_usuario_ftp"             # Usuario FTP
 FTP_PASS="tu_contraseña"              # Contraseña FTP
-FTP_PATH="/public_html/"              # Ruta destino en el servidor (ajusta si es subdominio/subcarpeta)
+FTP_PATH="/public_html/"              # Ruta destino en el servidor
 
 # 📁 Configuración del proyecto
 LOCAL_BUILD_DIR="./dist"              # Carpeta local del build
-PROJECT_NAME="TaskFlow"               # Nombre del proyecto (solo para logs)
+PROJECT_NAME="TaskFlow"               # Nombre del proyecto
 
 # ============================================================
-# NO EDITAR DE AQUÍ EN ADELANTE (a menos que sepas lo que haces)
+# VALIDACIONES
 # ============================================================
 
 echo ""
@@ -28,6 +28,18 @@ echo "🚀 ==========================================="
 echo "   Desplegando $PROJECT_NAME a cPanel"
 echo "🚀 ==========================================="
 echo ""
+
+# Verificar credenciales
+if [ "$FTP_USER" = "tu_usuario_ftp" ] || [ "$FTP_PASS" = "tu_contraseña" ]; then
+    echo "❌ Error: Por favor, edita las credenciales FTP en este script."
+    echo "   Abre deploy.sh y modifica las variables:"
+    echo "   • FTP_HOST"
+    echo "   • FTP_USER"
+    echo "   • FTP_PASS"
+    echo "   • FTP_PATH"
+    echo ""
+    exit 1
+fi
 
 # Verificar que lftp esté instalado
 if ! command -v lftp &> /dev/null; then
@@ -37,7 +49,7 @@ if ! command -v lftp &> /dev/null; then
     echo "   • Ubuntu/Debian:  sudo apt-get install lftp"
     echo "   • CentOS/RHEL:    sudo yum install lftp"
     echo "   • macOS:          brew install lftp"
-    echo "   • Windows:        Usa FileZilla (ver README.md)"
+    echo "   • Windows:        Usa deploy.ps1 o FileZilla"
     echo ""
     exit 1
 fi
@@ -51,27 +63,52 @@ if [ ! -d "$LOCAL_BUILD_DIR" ]; then
         echo "❌ Error al compilar el proyecto."
         exit 1
     fi
+    echo "✅ Build completado exitosamente."
+fi
+
+# Verificar que dist no esté vacío
+if [ -z "$(ls -A $LOCAL_BUILD_DIR)" ]; then
+    echo "❌ Error: La carpeta $LOCAL_BUILD_DIR está vacía."
+    echo "🔨 Ejecutando build..."
+    npm run build
+    if [ $? -ne 0 ]; then
+        echo "❌ Error al compilar el proyecto."
+        exit 1
+    fi
 fi
 
 echo "📦 Conectando a $FTP_HOST..."
 echo "📂 Destino: $FTP_PATH"
 echo ""
 
-# Subir archivos usando lftp con mirror (sincronización inteligente)
+# ============================================================
+# DESPLIEGUE CON LFTP
+# ============================================================
+
 lftp -u "$FTP_USER","$FTP_PASS" "$FTP_HOST" <<EOF
-set ftp:ssl-allow no
+set ftp:ssl-allow yes
 set ssl:verify-certificate no
 set net:max-retries 3
 set net:timeout 30
+set net:reconnect-interval-base 5
+set net:reconnect-interval-max 35
 
-# Eliminar archivos antiguos del servidor (backup primero)
-echo "🗑️  Limpiando archivos antiguos..."
+# Navegar al directorio destino
+cd $FTP_PATH
+
+# Crear backup de archivos actuales (opcional)
+# mirror --reverse --delete . ./backup_$(date +%Y%m%d_%H%M%S)
+
+# Sincronizar archivos
+echo "📤 Sincronizando archivos..."
 mirror --reverse --delete --verbose \
-    --exclude ".htaccess.bak" \
-    "$LOCAL_BUILD_DIR/" "$FTP_PATH"
+    --exclude ".git*" \
+    --exclude ".env*" \
+    --exclude "node_modules/*" \
+    "$LOCAL_BUILD_DIR/" "."
 
 echo ""
-echo "✅ ¡Despliegue completado!"
+echo "✅ Sincronización completada!"
 bye
 EOF
 
@@ -81,14 +118,22 @@ if [ $? -eq 0 ]; then
     echo "   ¡Despliegue exitoso!"
     echo "🎉 ==========================================="
     echo ""
-    echo "🌐 Visita tu sitio: https://$(echo $FTP_HOST | sed 's/ftp\.//')"
+    # Extraer dominio del host FTP
+    DOMAIN=$(echo $FTP_HOST | sed 's/^ftp\.//')
+    echo "🌐 Visita tu sitio: https://$DOMAIN"
     echo ""
 else
     echo ""
-    echo "❌ Error durante el despliegue. Verifica:"
+    echo "❌ Error durante el despliegue."
+    echo ""
+    echo "🔍 Verifica:"
     echo "   • Credenciales FTP correctas"
     echo "   • Permisos de escritura en $FTP_PATH"
     echo "   • Conexión a internet"
+    echo "   • El servidor FTP está activo"
+    echo ""
+    echo "💡 Consejo: Prueba conectarte manualmente con:"
+    echo "   lftp -u $FTP_USER $FTP_HOST"
     echo ""
     exit 1
 fi
