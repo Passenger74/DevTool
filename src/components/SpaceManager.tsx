@@ -12,7 +12,7 @@ const spaceColors = [
 ];
 
 export default function SpaceManager() {
-  const { spaces, tasks, teams, addSpace, updateSpace, deleteSpace, verifyTask } = useApp();
+  const { spaces, tasks, teams, tags, addSpace, updateSpace, deleteSpace, verifyTask } = useApp();
   const { theme } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSpace, setEditingSpace] = useState<Space | null>(null);
@@ -40,9 +40,7 @@ export default function SpaceManager() {
   };
 
   const getSpaceTasks = (spaceId: string) => {
-    const space = spaces.find(s => s.id === spaceId);
-    if (!space?.teamId) return [];
-    return tasks.filter(t => t.teamId === space.teamId);
+    return tasks.filter(t => t.spaceId === spaceId);
   };
 
   const getCompletedTasks = (spaceId: string) => {
@@ -432,18 +430,38 @@ export default function SpaceManager() {
                         <span className={`px-2 py-1 rounded ${
                           task.status === 'done' ? 'bg-green-100 text-green-700' :
                           task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                          task.status === 'review' ? 'bg-purple-100 text-purple-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>
                           {task.status === 'done' ? 'Completada' :
                            task.status === 'in-progress' ? 'En progreso' :
+                           task.status === 'review' ? 'En revisión' :
                            'Pendiente'}
                         </span>
+                        <span>👤 {task.assignee}</span>
                         {task.fileLinks && task.fileLinks.length > 0 && (
                           <span className="flex items-center gap-1">
                             📎 {task.fileLinks.length} archivos
                           </span>
                         )}
                       </div>
+                      {task.tags && task.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {task.tags.map(tagName => {
+                            const tag = tags.find(t => t.name === tagName);
+                            const color = tag?.color || '#6B7280';
+                            return (
+                              <span
+                                key={tagName}
+                                className="text-[10px] px-2 py-0.5 rounded-full text-white font-medium"
+                                style={{ backgroundColor: color }}
+                              >
+                                #{tagName}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

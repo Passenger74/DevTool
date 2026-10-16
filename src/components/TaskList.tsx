@@ -24,7 +24,7 @@ interface TaskListProps {
 
 export default function TaskList({ onEditTask }: TaskListProps) {
   const { 
-    tasks, tags, updateTask, deleteTask,
+    tasks, tags, spaces, updateTask, deleteTask,
     selectedTasks, toggleTaskSelection, selectAllTasks, 
     clearTaskSelection, deleteSelectedTasks, updateSelectedTasksStatus 
   } = useApp();
@@ -370,6 +370,21 @@ export default function TaskList({ onEditTask }: TaskListProps) {
                           </span>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Space */}
+                  {task.spaceId && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                      {(() => {
+                        const space = spaces.find(s => s.id === task.spaceId);
+                        return space ? (
+                          <>
+                            <span>{space.icon}</span>
+                            <span>{space.name}</span>
+                          </>
+                        ) : null;
+                      })()}
                     </div>
                   )}
 

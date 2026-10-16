@@ -14,6 +14,7 @@ export interface Task {
   createdAt: string;
   boardId?: string;
   teamId?: string;
+  spaceId?: string;
   syncedToCalendar?: boolean;
   calendarEventId?: string;
   verified?: boolean;

@@ -3,7 +3,7 @@ import { useApp } from '../store';
 import { useTheme } from '../theme';
 import { Tag } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { Plus, Edit2, Trash2, X, Check, Palette } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Palette, CheckCircle2 } from 'lucide-react';
 
 const presetColors = [
   '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#10B981',
@@ -13,12 +13,17 @@ const presetColors = [
 ];
 
 export default function TagManager() {
-  const { tags, addTag, updateTag, deleteTag } = useApp();
+  const { tags, tasks, spaces, addTag, updateTag, deleteTag } = useApp();
   const { theme } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  const [selectedTagDetail, setSelectedTagDetail] = useState<Tag | null>(null);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(presetColors[0]);
+
+  const getTagTasks = (tagName: string) => {
+    return tasks.filter(t => t.tags.includes(tagName));
+  };
 
   const handleCreateTag = () => {
     if (!newTagName.trim()) return;
@@ -93,6 +98,13 @@ export default function TagManager() {
                 </div>
               </div>
               <div className="flex gap-1">
+                <button
+                  onClick={() => setSelectedTagDetail(tag)}
+                  className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  title="Ver tareas"
+                >
+                  <CheckCircle2 size={16} />
+                </button>
                 <button
                   onClick={() => openEditModal(tag)}
                   className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -272,6 +284,80 @@ export default function TagManager() {
                   Guardar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tag Tasks Modal */}
+      {selectedTagDetail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+                  style={{ backgroundColor: selectedTagDetail.color }}
+                >
+                  #
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 capitalize">{selectedTagDetail.name}</h2>
+                  <p className="text-sm text-gray-500">Tareas con esta etiqueta</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedTagDetail(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {getTagTasks(selectedTagDetail.name).length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No hay tareas con esta etiqueta</p>
+                </div>
+              ) : (
+                getTagTasks(selectedTagDetail.name).map(task => {
+                  const taskSpace = spaces.find(s => s.id === task.spaceId);
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div
+                        className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
+                        style={{ backgroundColor: selectedTagDetail.color }}
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-800">{task.title}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                          <span className={`px-2 py-1 rounded ${
+                            task.status === 'done' ? 'bg-green-100 text-green-700' :
+                            task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                            task.status === 'review' ? 'bg-purple-100 text-purple-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {task.status === 'done' ? 'Completada' :
+                             task.status === 'in-progress' ? 'En progreso' :
+                             task.status === 'review' ? 'En revisión' :
+                             'Pendiente'}
+                          </span>
+                          <span>👤 {task.assignee}</span>
+                          {taskSpace && (
+                            <span className="flex items-center gap-1">
+                              {taskSpace.icon} {taskSpace.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

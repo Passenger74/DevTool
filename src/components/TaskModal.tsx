@@ -13,7 +13,7 @@ interface TaskModalProps {
 }
 
 export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: TaskModalProps) {
-  const { tags } = useApp();
+  const { tags, spaces } = useApp();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -22,6 +22,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
   const [assignee, setAssignee] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedSpace, setSelectedSpace] = useState<string>('');
   const [isVerified, setIsVerified] = useState(false);
   const [fileLinks, setFileLinks] = useState<FileLink[]>([]);
   
@@ -40,6 +41,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
       setAssignee(task.assignee);
       setDueDate(task.dueDate);
       setSelectedTags(task.tags || []);
+      setSelectedSpace(task.spaceId || '');
       setIsVerified(task.verified || false);
       setFileLinks(task.fileLinks || []);
     } else {
@@ -50,6 +52,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
       setAssignee('');
       setDueDate('');
       setSelectedTags([]);
+      setSelectedSpace('');
       setIsVerified(false);
       setFileLinks([]);
     }
@@ -76,6 +79,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
       assignee: assignee || 'Sin asignar',
       dueDate,
       tags: selectedTags,
+      spaceId: selectedSpace || undefined,
       createdAt: task?.createdAt || new Date().toISOString().split('T')[0],
       verified: isVerified,
       fileLinks,
@@ -265,6 +269,23 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-400"
               />
             </div>
+          </div>
+
+          {/* Space */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Espacio</label>
+            <select
+              value={selectedSpace}
+              onChange={e => setSelectedSpace(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-400"
+            >
+              <option value="">Sin espacio</option>
+              {spaces.map(space => (
+                <option key={space.id} value={space.id}>
+                  {space.icon} {space.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Tags with colors */}

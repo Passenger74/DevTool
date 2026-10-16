@@ -95,6 +95,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-20',
     boardId: 'board-1',
     teamId: 'team-1',
+    spaceId: '1',
   },
   {
     id: '2',
@@ -108,6 +109,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-22',
     boardId: 'board-1',
     teamId: 'team-2',
+    spaceId: '8',
   },
   {
     id: '3',
@@ -121,6 +123,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-25',
     boardId: 'board-2',
     teamId: 'team-1',
+    spaceId: '5',
   },
   {
     id: '4',
@@ -134,6 +137,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-18',
     boardId: 'board-1',
     teamId: 'team-2',
+    spaceId: '8',
   },
   {
     id: '5',
@@ -147,6 +151,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-28',
     boardId: 'board-3',
     teamId: 'team-3',
+    spaceId: '3',
   },
   {
     id: '6',
@@ -160,6 +165,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-21',
     boardId: 'board-1',
     teamId: 'team-2',
+    spaceId: '7',
   },
   {
     id: '7',
@@ -173,6 +179,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-30',
     boardId: 'board-2',
     teamId: 'team-1',
+    spaceId: '6',
   },
   {
     id: '8',
@@ -186,6 +193,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-26',
     boardId: 'board-3',
     teamId: 'team-3',
+    spaceId: '3',
   },
   {
     id: '9',
@@ -199,6 +207,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-29',
     boardId: 'board-1',
     teamId: 'team-2',
+    spaceId: '8',
   },
   {
     id: '10',
@@ -212,6 +221,7 @@ const defaultTasks: Task[] = [
     createdAt: '2026-01-27',
     boardId: 'board-1',
     teamId: 'team-2',
+    spaceId: '7',
   },
 ];
 
