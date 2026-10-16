@@ -94,6 +94,14 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
   const handleAddFileLink = () => {
     if (!newLinkName.trim() || !newLinkUrl.trim()) return;
     
+    // Validar URL
+    try {
+      new URL(newLinkUrl.trim());
+    } catch {
+      alert('Por favor, ingresa una URL válida');
+      return;
+    }
+    
     const newLink: FileLink = {
       id: uuidv4(),
       name: newLinkName.trim(),
@@ -129,23 +137,24 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
             <h2 className="text-lg font-bold text-gray-800">
               {task ? 'Editar Tarea' : 'Nueva Tarea'}
             </h2>
-            {task && (
-              <button
-                onClick={handleVerifyToggle}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  isVerified
-                    ? 'bg-green-100 text-green-700 border border-green-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
-                }`}
-              >
-                <Check size={14} />
-                {isVerified ? 'Verificado' : 'Verificar'}
-              </button>
-            )}
+            <button
+              onClick={handleVerifyToggle}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                isVerified
+                  ? 'bg-green-100 text-green-700 border border-green-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+              }`}
+              aria-label={isVerified ? 'Marcar como no verificado' : 'Marcar como verificado'}
+              aria-pressed={isVerified}
+            >
+              <Check size={14} />
+              {isVerified ? 'Verificado' : 'Verificar'}
+            </button>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar modal"
           >
             <X size={20} className="text-gray-400" />
           </button>
@@ -255,10 +264,13 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                           ? 'text-white shadow-sm'
                           : 'bg-white text-gray-600 hover:bg-gray-100'
                       }`}
-                      style={isSelected 
-                        ? { backgroundColor: tag.color, borderColor: tag.color }
-                        : { borderColor: tag.color + '40' }
+                      style={
+                        isSelected
+                          ? { backgroundColor: tag.color, borderColor: tag.color }
+                          : { borderColor: `${tag.color}40` }
                       }
+                      aria-label={`Etiqueta ${tag.name}${isSelected ? ' seleccionada' : ''}`}
+                      aria-pressed={isSelected}
                     >
                       {tag.name}
                     </button>
@@ -320,6 +332,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1 text-gray-400 hover:text-blue-600"
+                      aria-label={`Abrir ${link.name} en nueva pestaña`}
                     >
                       <ExternalLink size={14} />
                     </a>
@@ -327,6 +340,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                       type="button"
                       onClick={() => handleRemoveFileLink(link.id)}
                       className="p-1 text-gray-400 hover:text-red-600"
+                      aria-label={`Eliminar enlace ${link.name}`}
                     >
                       <X size={14} />
                     </button>
@@ -344,6 +358,8 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                   onChange={e => setNewLinkName(e.target.value)}
                   placeholder="Nombre del archivo"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+                  aria-label="Nombre del archivo"
+                  required
                 />
                 <input
                   type="url"
@@ -351,6 +367,8 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                   onChange={e => setNewLinkUrl(e.target.value)}
                   placeholder="https://ejemplo.com/archivo"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
+                  aria-label="URL del archivo"
+                  required
                 />
                 <div className="flex gap-2">
                   <button
@@ -358,6 +376,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                     onClick={handleAddFileLink}
                     disabled={!newLinkName.trim() || !newLinkUrl.trim()}
                     className="flex items-center gap-1 px-3 py-1.5 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Confirmar agregar enlace"
                   >
                     <Check size={12} />
                     Agregar
@@ -370,6 +389,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                       setNewLinkUrl('');
                     }}
                     className="px-3 py-1.5 text-gray-600 text-xs hover:bg-gray-200 rounded-lg"
+                    aria-label="Cancelar agregar enlace"
                   >
                     Cancelar
                   </button>
@@ -380,6 +400,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                 type="button"
                 onClick={() => setShowFileLinkForm(true)}
                 className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors w-full"
+                aria-label="Agregar nuevo enlace a archivo"
               >
                 <Plus size={14} />
                 Agregar enlace a archivo
@@ -394,6 +415,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                 type="button"
                 onClick={() => { onDelete(task.id); onClose(); }}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                aria-label="Eliminar tarea"
               >
                 <Trash2 size={16} />
                 Eliminar
@@ -404,12 +426,14 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Cancelar y cerrar"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-sm font-medium rounded-lg transition-all shadow-sm"
+                aria-label={task ? 'Guardar cambios' : 'Crear nueva tarea'}
               >
                 <Save size={16} />
                 {task ? 'Guardar' : 'Crear'}
