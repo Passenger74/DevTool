@@ -29,6 +29,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
   const [showFileLinkForm, setShowFileLinkForm] = useState(false);
   const [newLinkName, setNewLinkName] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [linkError, setLinkError] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -55,11 +56,16 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
     setShowFileLinkForm(false);
     setNewLinkName('');
     setNewLinkUrl('');
+    setLinkError('');
   }, [task, isOpen]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    
+    if (!title.trim()) {
+      alert('El título de la tarea es obligatorio');
+      return;
+    }
 
     const newTask: Task = {
       id: task?.id || uuidv4(),
@@ -92,13 +98,25 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
   };
 
   const handleAddFileLink = () => {
-    if (!newLinkName.trim() || !newLinkUrl.trim()) return;
+    setLinkError('');
+    
+    if (!newLinkName.trim() || !newLinkUrl.trim()) {
+      setLinkError('Por favor, completa todos los campos');
+      return;
+    }
     
     // Validar URL
     try {
       new URL(newLinkUrl.trim());
     } catch {
-      alert('Por favor, ingresa una URL válida');
+      setLinkError('Por favor, ingresa una URL válida');
+      return;
+    }
+
+    // Validar URL duplicada
+    const urlExists = fileLinks.some(link => link.url === newLinkUrl.trim());
+    if (urlExists) {
+      setLinkError('Este enlace ya existe en la lista');
       return;
     }
     
@@ -111,11 +129,14 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
     setFileLinks(prev => [...prev, newLink]);
     setNewLinkName('');
     setNewLinkUrl('');
+    setLinkError('');
     setShowFileLinkForm(false);
   };
 
   const handleRemoveFileLink = (linkId: string) => {
-    setFileLinks(prev => prev.filter(l => l.id !== linkId));
+    if (confirm('¿Estás seguro de que deseas eliminar este enlace?')) {
+      setFileLinks(prev => prev.filter(l => l.id !== linkId));
+    }
   };
 
   const handleVerifyToggle = () => {
@@ -137,19 +158,21 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
             <h2 className="text-lg font-bold text-gray-800">
               {task ? 'Editar Tarea' : 'Nueva Tarea'}
             </h2>
-            <button
-              onClick={handleVerifyToggle}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                isVerified
-                  ? 'bg-green-100 text-green-700 border border-green-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
-              }`}
-              aria-label={isVerified ? 'Marcar como no verificado' : 'Marcar como verificado'}
-              aria-pressed={isVerified}
-            >
-              <Check size={14} />
-              {isVerified ? 'Verificado' : 'Verificar'}
-            </button>
+            {task && (
+              <button
+                onClick={handleVerifyToggle}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  isVerified
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+                }`}
+                aria-label={isVerified ? 'Marcar como no verificado' : 'Marcar como verificado'}
+                aria-pressed={isVerified}
+              >
+                <Check size={14} />
+                {isVerified ? 'Verificado' : 'Verificar'}
+              </button>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -355,7 +378,10 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                 <input
                   type="text"
                   value={newLinkName}
-                  onChange={e => setNewLinkName(e.target.value)}
+                  onChange={e => {
+                    setNewLinkName(e.target.value);
+                    setLinkError('');
+                  }}
                   placeholder="Nombre del archivo"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
                   aria-label="Nombre del archivo"
@@ -364,12 +390,21 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                 <input
                   type="url"
                   value={newLinkUrl}
-                  onChange={e => setNewLinkUrl(e.target.value)}
+                  onChange={e => {
+                    setNewLinkUrl(e.target.value);
+                    setLinkError('');
+                  }}
                   placeholder="https://ejemplo.com/archivo"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
                   aria-label="URL del archivo"
                   required
                 />
+                {linkError && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <X size={12} />
+                    {linkError}
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -384,9 +419,10 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task }: T
                   <button
                     type="button"
                     onClick={() => {
-                      setShowFileLinkForm(false);
                       setNewLinkName('');
                       setNewLinkUrl('');
+                      setLinkError('');
+                      setShowFileLinkForm(false);
                     }}
                     className="px-3 py-1.5 text-gray-600 text-xs hover:bg-gray-200 rounded-lg"
                     aria-label="Cancelar agregar enlace"
