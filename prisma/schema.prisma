@@ -1,0 +1,114 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum SpaceVisibility {
+  PRIVATE
+  INTERNAL
+  PUBLIC
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  name       String?
+  password   String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  // relations
+  ownedGroups Group[]     @relation("GroupOwner")
+  memberships UserGroup[]
+  tasks       Task[]      @relation("TaskAssignee")
+  activities  Activity[]  @relation("ActorActivities")
+}
+
+model Group {
+  id        Int        @id @default(autoincrement())
+  name      String
+  ownerId   Int
+  owner     User       @relation("GroupOwner", fields: [ownerId], references: [id])
+  members   UserGroup[]
+  createdAt DateTime   @default(now())
+}
+
+model UserGroup {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  groupId Int
+  role    String
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+}
+
+model Space {
+  id         Int             @id @default(autoincrement())
+  name       String
+  ownerId    Int
+  owner      User            @relation(fields: [ownerId], references: [id])
+  visibility SpaceVisibility @default(PRIVATE)
+  tasks      Task[]
+  createdAt  DateTime        @default(now())
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  assigneeId  Int?
+  assignee    User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  spaceId     Int?
+  space       Space?     @relation(fields: [spaceId], references: [id])
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  tags TaskTag[]
+  @@index([spaceId])
+  @@index([assigneeId])
+}
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  tasks TaskTag[]
+}
+
+model TaskTag {
+  id     Int  @id @default(autoincrement())
+  taskId Int
+  tagId  Int
+
+  task Task @relation(fields: [taskId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@unique([taskId, tagId])
+  @@index([tagId])
+}
+
+model Activity {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  actor      User?    @relation("ActorActivities", fields: [actorId], references: [id])
+  action     String
+  targetType String?
+  targetId   Int?
+  createdAt  DateTime @default(now())
+}
