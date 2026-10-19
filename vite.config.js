@@ -3,13 +3,24 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic',
+    }),
+    tailwindcss()
+  ],
   server: {
     host: "0.0.0.0",
     port: 3000,
     strictPort: true,
     hmr: {
       port: 3000,
+    },
+  },
+  resolve: {
+    alias: {
+      'react': 'react',
+      'react-dom': 'react-dom',
     },
   },
 });
