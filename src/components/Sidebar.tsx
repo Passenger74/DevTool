@@ -15,6 +15,7 @@ import {
   LogOut,
   Tag,
   Folder,
+  History,
 } from 'lucide-react';
 
 const navItems: { id: ViewMode; label: string; icon: ReactNode; section?: string }[] = [
@@ -26,6 +27,7 @@ const navItems: { id: ViewMode; label: string; icon: ReactNode; section?: string
   { id: 'boards', label: 'Tableros', icon: <LayoutGrid size={20} /> },
   { id: 'tags', label: 'Etiquetas', icon: <Tag size={20} /> },
   { id: 'spaces', label: 'Espacios', icon: <Folder size={20} /> },
+  { id: 'history', label: 'Historial', icon: <History size={20} /> },
   { id: 'settings', label: 'Configuración', icon: <Settings size={20} /> },
 ];
 

@@ -48,6 +48,14 @@
 - Estados: Por hacer, En progreso, En revisión, Completada
 - Asignación a miembros del equipo
 - Fechas límite
+
+### 📊 Historial de Trabajos
+- Registro automático de tareas completadas
+- Campos: Miembro, Espacio, Trabajo, Fecha y Hora
+- Filtros por espacio, miembro y rango de fechas
+- Exportación a CSV con un clic
+- Tabla interactiva con todos los registros
+- Seguimiento completo de la productividad del equipo
 - Etiquetas personalizables
 
 ### ⚙️ Configuración

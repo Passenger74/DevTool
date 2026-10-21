@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { Task, Space, ViewMode, Team, Board, BoardColumn, GoogleCalendarConnection, Tag, FileLink } from './types';
+import { Task, Space, ViewMode, Team, Board, BoardColumn, GoogleCalendarConnection, Tag, FileLink, WorkHistoryEntry } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AppState {
@@ -8,6 +8,7 @@ interface AppState {
   teams: Team[];
   boards: Board[];
   tags: Tag[];
+  workHistory: WorkHistoryEntry[];
   calendarConnection: GoogleCalendarConnection;
   currentView: ViewMode;
   selectedSpace: string | null;
@@ -336,6 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [teams, setTeams] = useState<Team[]>(defaultTeams);
   const [boards, setBoards] = useState<Board[]>(defaultBoards);
   const [tags, setTags] = useState<Tag[]>(defaultTags);
+  const [workHistory, setWorkHistory] = useState<WorkHistoryEntry[]>([]);
   const [calendarConnection, setCalendarConnection] = useState<GoogleCalendarConnection>(defaultCalendar);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
@@ -345,8 +347,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Tasks
   const addTask = (task: Task) => setTasks(prev => [task, ...prev]);
-  const updateTask = (id: string, updates: Partial<Task>) =>
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  const updateTask = (id: string, updates: Partial<Task>) => {
+    setTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      // Si la tarea se marca como completada, agregar al historial
+      if (task && updates.status === 'done' && task.status !== 'done' && task.spaceId) {
+        const space = spaces.find(s => s.id === task.spaceId);
+        const historyEntry: WorkHistoryEntry = {
+          id: uuidv4(),
+          taskId: task.id,
+          taskTitle: task.title,
+          assignee: task.assignee,
+          spaceId: task.spaceId,
+          spaceName: space?.name || 'Sin espacio',
+          completedAt: new Date().toISOString(),
+          tags: task.tags,
+        };
+        setWorkHistory(prev => [historyEntry, ...prev]);
+      }
+      return prev.map(t => t.id === id ? { ...t, ...updates } : t);
+    });
+  };
   const deleteTask = (id: string) => setTasks(prev => prev.filter(t => t.id !== id));
   const moveTask = (id: string, status: Task['status']) =>
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
@@ -516,6 +537,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       teams,
       boards,
       tags,
+      workHistory,
       calendarConnection,
       currentView,
       selectedSpace,

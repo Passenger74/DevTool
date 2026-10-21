@@ -44,7 +44,18 @@ export interface Space {
   teamId?: string;
 }
 
-export type ViewMode = 'dashboard' | 'list' | 'board' | 'calendar' | 'teams' | 'boards' | 'settings' | 'tags' | 'spaces';
+export type ViewMode = 'dashboard' | 'list' | 'board' | 'calendar' | 'teams' | 'boards' | 'settings' | 'tags' | 'spaces' | 'history';
+
+export interface WorkHistoryEntry {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  assignee: string;
+  spaceId: string;
+  spaceName: string;
+  completedAt: string;
+  tags: string[];
+}
 
 // ========== NUEVOS TIPOS ==========
 

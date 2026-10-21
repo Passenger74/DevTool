@@ -15,6 +15,9 @@ export default function Header({ onNewTask }: HeaderProps) {
     calendar: 'Calendario',
     teams: 'Equipos',
     boards: 'Tableros',
+    tags: 'Etiquetas',
+    spaces: 'Espacios',
+    history: 'Historial de Trabajos',
     settings: 'Configuración',
   };
 

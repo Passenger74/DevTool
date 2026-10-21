@@ -15,6 +15,7 @@ import TeamsManager from './components/TeamsManager';
 import BoardsManager from './components/BoardsManager';
 import TagManager from './components/TagManager';
 import SpaceManager from './components/SpaceManager';
+import WorkHistoryExport from './components/WorkHistoryExport';
 import SettingsView from './components/SettingsView';
 
 function AppContent() {
@@ -84,6 +85,8 @@ function AppContent() {
         return <TagManager />;
       case 'spaces':
         return <SpaceManager />;
+      case 'history':
+        return <WorkHistoryExport />;
       case 'settings':
         return <SettingsView />;
       default:
